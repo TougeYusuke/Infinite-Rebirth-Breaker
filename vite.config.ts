@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/Infinite-Rebirth-Breaker/', // GitHub Pagesのリポジトリ名
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -15,6 +16,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    assetsDir: 'assets',
   },
 });
-
