@@ -1,0 +1,39 @@
+{
+  "name": "infinite-rebirth-breaker",
+  "version": "0.1.0",
+  "description": "無限にインフレする数値を楽しみながら、周回プレイ（転生）を繰り返して強くなるブラウザRPG（クリッカー/放置系）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "game",
+    "rpg",
+    "clicker",
+    "idle",
+    "phaser",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "break_infinity.js": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vitest": "^4.0.16"
+  }
+}
+
