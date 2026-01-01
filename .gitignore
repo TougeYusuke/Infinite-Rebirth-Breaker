@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json はリポジトリに含める（GitHub Actionsのnpm ciで必要）
 
 # Build outputs
 dist/
