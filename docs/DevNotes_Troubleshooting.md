@@ -19,6 +19,7 @@ GitHub Pages に Vite + TypeScript プロジェクトをデプロイした際、
 - **Vite Config:** `vite.config.ts` に `base: '/[repository-name]/'` を設定する。
 - **index.html:** パスは `/src/main.ts` （Vite標準）のままにする。Vite がビルド時に `base` 設定に基づいて適切なパス（例: `/repo/assets/index.js`）に自動置換してくれる。
 - **.nojekyll:** GitHub Pages の Jekyll 処理（`_`で始まるファイルの無視など）を回避するため、デプロイディレクトリ（`dist`）に `.nojekyll` ファイルを含める。
+- **GitHub Pages設定:** リポジトリの「Settings」→「Pages」で、Branch を `gh-pages` / `/(root)` に設定する。`/(root)` を選択しないと、正しいパスでファイルが配信されない場合がある。
 
 ---
 

@@ -52,13 +52,18 @@ GitHubリポジトリで以下を確認：
 2. `index.html` を開いて内容を確認
    - スクリプトパスが `/Infinite-Rebirth-Breaker/assets/index-*.js` になっているか
 
-### 4. GitHub Pagesの設定を確認
+### 4. GitHub Pagesの設定を確認（重要）
 
 1. リポジトリの「Settings」→「Pages」を開く
 2. 以下を確認：
    - **Source:** 「Deploy from a branch」が選択されている
-   - **Branch:** `gh-pages` / `/(root)` が選択されている
+   - **Branch:** `gh-pages` / `/(root)` が選択されている（**重要:** `/` の後に `(root)` が表示されていることを確認）
    - **Custom domain:** 設定されていない（または正しく設定されている）
+
+**解決方法:**
+- 「Branch」のドロップダウンで `gh-pages` を選択した後、その右側のドロップダウンで `/(root)` を選択する必要があります。
+- これにより、`gh-pages` ブランチのルートディレクトリからファイルが配信されるようになります。
+- この設定が正しくないと、`/src/main.ts` のような古いパスが参照され、404エラーが発生します。
 
 ### 5. キャッシュのクリア
 
