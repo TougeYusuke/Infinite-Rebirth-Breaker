@@ -109,39 +109,49 @@ export class BattleScene extends Phaser.Scene {
    * UIを初期化
    */
   private initializeUI(): void {
+    const headerBgHeight = 120;
+    
+    // ヘッダー背景
+    const headerBg = this.add.graphics();
+    headerBg.fillStyle(0x000000, 0.5);
+    headerBg.fillRect(0, 0, this.cameras.main.width, headerBgHeight);
+    
     // ステージ表示
     this.stageText = this.add.text(20, 20, '', {
       fontSize: '24px',
       color: '#ffffff',
+      fontStyle: 'bold',
     });
     
     // タイマー表示
-    this.timerText = this.add.text(20, 50, '', {
-      fontSize: '20px',
+    this.timerText = this.add.text(this.cameras.main.width - 20, 20, '', {
+      fontSize: '24px',
       color: '#ffffff',
-    });
+      align: 'right',
+    }).setOrigin(1, 0); // 右揃え
     
-    // タイマーバー
+    // タイマーバー（タイマー表示の下）
     this.timerBar = new HPBar(this, {
       x: this.cameras.main.width / 2,
-      y: 50,
-      width: 300,
-      height: 10,
+      y: 55,
+      width: this.cameras.main.width - 40,
+      height: 8,
     });
     
     // コンボ表示（Full Runの場合のみ）
     if (this.isFullRun) {
-      this.comboText = this.add.text(20, 80, '', {
+      this.comboText = this.add.text(20, 70, '', {
         fontSize: '20px',
         color: '#4A90E2',
+        fontStyle: 'bold',
       });
       
-      // コンボバー
+      // コンボバー（コンボ表示の下）
       this.comboBar = new HPBar(this, {
         x: this.cameras.main.width / 2,
-        y: 80,
-        width: 300,
-        height: 10,
+        y: 100,
+        width: this.cameras.main.width - 40,
+        height: 8,
       });
     }
     
@@ -167,9 +177,12 @@ export class BattleScene extends Phaser.Scene {
       this.hpBar.destroy();
     }
     
+    // 敵HPバーの位置を調整（ヘッダーより下、画面中央付近）
+    const hpBarY = 180;
+    
     this.hpBar = new HPBar(this, {
       x: this.cameras.main.width / 2,
-      y: 100,
+      y: hpBarY,
       width: 300,
       height: 20,
     });
