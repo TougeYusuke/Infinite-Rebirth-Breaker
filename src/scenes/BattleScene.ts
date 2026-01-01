@@ -6,20 +6,29 @@
 
 import Phaser from 'phaser';
 import { Battle, BattleConfig } from '../core/Battle';
-import { Enemy, EnemyConfig } from '../core/Enemy';
+import { Enemy } from '../core/Enemy';
 import { DamagePopup } from '../ui/DamagePopup';
 import { HPBar } from '../ui/HPBar';
 import { DecimalWrapper } from '../utils/Decimal';
+import { Stage, StageConfig } from '../systems/Stage';
+import { Timer, TimerConfig } from '../systems/Timer';
+import { GameOverScene, GameOverInfo } from './GameOverScene';
 
 export class BattleScene extends Phaser.Scene {
   private battle: Battle | null = null;
-  private enemy: Enemy | null = null;
+  private stage: Stage | null = null;
+  private timer: Timer | null = null;
   private hpBar: HPBar | null = null;
+  private timerBar: HPBar | null = null;
   private damagePopups: DamagePopup[] = [];
-  private currentStage: number = 1;
   private baseDamage: number = 10;
   private attackLevel: number = 1;
   private comboMultiplier: number = 1.0;
+  private totalDamage: DecimalWrapper = DecimalWrapper.zero();
+  
+  // UI要素
+  private stageText: Phaser.GameObjects.Text | null = null;
+  private timerText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -32,11 +41,14 @@ export class BattleScene extends Phaser.Scene {
     // 背景色
     this.cameras.main.setBackgroundColor('#2a2a2a');
     
-    // バトルシステムを初期化
-    this.initializeBattle();
+    // システムを初期化
+    this.initializeSystems();
     
     // 最初の敵を生成
-    this.spawnEnemy(this.currentStage);
+    this.spawnEnemy();
+    
+    // UIを初期化
+    this.initializeUI();
     
     // タップイベントを設定
     this.input.on('pointerdown', () => {
@@ -45,33 +57,71 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /**
-   * バトルシステムを初期化
+   * システムを初期化
    */
-  private initializeBattle(): void {
+  private initializeSystems(): void {
+    // バトルシステム
     const battleConfig: BattleConfig = {
       baseDamage: this.baseDamage,
       attackLevel: this.attackLevel,
       comboMultiplier: this.comboMultiplier,
     };
-    
     this.battle = new Battle(battleConfig);
+    
+    // ステージシステム
+    const stageConfig: StageConfig = {
+      baseHP: 100,
+      startStage: 1,
+    };
+    this.stage = new Stage(stageConfig);
+    
+    // タイマーシステム
+    const timerConfig: TimerConfig = {
+      timeLimit: 30, // 30秒
+    };
+    this.timer = new Timer(timerConfig);
+    this.timer.start();
+  }
+
+  /**
+   * UIを初期化
+   */
+  private initializeUI(): void {
+    // ステージ表示
+    this.stageText = this.add.text(20, 20, '', {
+      fontSize: '24px',
+      color: '#ffffff',
+    });
+    
+    // タイマー表示
+    this.timerText = this.add.text(20, 50, '', {
+      fontSize: '20px',
+      color: '#ffffff',
+    });
+    
+    // タイマーバー
+    this.timerBar = new HPBar(this, {
+      x: this.cameras.main.width / 2,
+      y: 50,
+      width: 300,
+      height: 10,
+    });
+    
+    this.updateUI();
   }
 
   /**
    * 敵を生成
-   * 
-   * @param stage - ステージ番号
    */
-  private spawnEnemy(stage: number): void {
-    const enemyConfig: EnemyConfig = {
-      baseHP: 100,
-      stage: stage,
-    };
+  private spawnEnemy(): void {
+    if (!this.stage) {
+      return;
+    }
     
-    this.enemy = new Enemy(enemyConfig);
+    const enemy = this.stage.spawnEnemy();
     
     if (this.battle) {
-      this.battle.setEnemy(this.enemy);
+      this.battle.setEnemy(enemy);
     }
     
     // HPバーを作成
@@ -94,7 +144,12 @@ export class BattleScene extends Phaser.Scene {
    * タップ処理
    */
   private handleTap(): void {
-    if (!this.battle || !this.enemy) {
+    if (!this.battle || !this.stage) {
+      return;
+    }
+    
+    const enemy = this.stage.getEnemy();
+    if (!enemy) {
       return;
     }
     
@@ -102,6 +157,9 @@ export class BattleScene extends Phaser.Scene {
     const damage = this.battle.tapAttack();
     
     if (damage && !damage.isZero()) {
+      // 累計ダメージを更新
+      this.totalDamage = this.totalDamage.add(damage);
+      
       // ダメージポップアップを表示
       this.showDamagePopup(damage);
       
@@ -109,7 +167,7 @@ export class BattleScene extends Phaser.Scene {
       this.updateHPBar();
       
       // 敵が倒されたかチェック
-      if (this.enemy.isDefeated()) {
+      if (this.stage.isEnemyDefeated()) {
         this.onEnemyDefeated();
       }
     }
@@ -141,9 +199,34 @@ export class BattleScene extends Phaser.Scene {
    * HPバーを更新
    */
   private updateHPBar(): void {
-    if (this.hpBar && this.enemy) {
-      const ratio = this.enemy.getHPRatio();
-      this.hpBar.updateHP(ratio);
+    if (this.hpBar && this.stage) {
+      const enemy = this.stage.getEnemy();
+      if (enemy) {
+        const ratio = enemy.getHPRatio();
+        this.hpBar.updateHP(ratio);
+      }
+    }
+  }
+
+  /**
+   * UIを更新
+   */
+  private updateUI(): void {
+    // ステージ表示
+    if (this.stageText && this.stage) {
+      this.stageText.setText(`Stage ${this.stage.getCurrentStage()}`);
+    }
+    
+    // タイマー表示
+    if (this.timerText && this.timer) {
+      const timeRemaining = Math.ceil(this.timer.getTimeRemaining());
+      this.timerText.setText(`Time: ${timeRemaining}s`);
+    }
+    
+    // タイマーバー
+    if (this.timerBar && this.timer) {
+      const ratio = this.timer.getTimeRatio();
+      this.timerBar.updateHP(ratio);
     }
   }
 
@@ -151,11 +234,50 @@ export class BattleScene extends Phaser.Scene {
    * 敵が倒された時の処理
    */
   private onEnemyDefeated(): void {
-    console.log(`Stage ${this.currentStage} クリア！`);
+    if (!this.stage) {
+      return;
+    }
+    
+    console.log(`Stage ${this.stage.getCurrentStage()} クリア！`);
+    
+    // タイマーをリセット
+    if (this.timer) {
+      this.timer.reset();
+      this.timer.start();
+    }
     
     // 次のステージへ
-    this.currentStage++;
-    this.spawnEnemy(this.currentStage);
+    this.stage.nextStage();
+    this.spawnEnemy();
+  }
+
+  /**
+   * ゲームオーバー処理
+   */
+  private onGameOver(): void {
+    if (!this.stage || !this.timer) {
+      return;
+    }
+    
+    // 転生石を計算
+    const reachedStage = this.stage.getCurrentStage();
+    const rebirthStones = DecimalWrapper.calculateRebirthStones(reachedStage);
+    
+    // ゲームオーバー情報を設定
+    const gameOverInfo: GameOverInfo = {
+      reachedStage: reachedStage,
+      rebirthStones: rebirthStones,
+      totalDamage: this.totalDamage,
+    };
+    
+    // GameOverSceneに情報を渡す
+    const gameOverScene = this.scene.get('GameOverScene') as GameOverScene;
+    if (gameOverScene) {
+      gameOverScene.setGameOverInfo(gameOverInfo);
+    }
+    
+    // GameOverSceneに遷移
+    this.scene.start('GameOverScene');
   }
 
   /**
@@ -165,7 +287,16 @@ export class BattleScene extends Phaser.Scene {
    * @param delta - 前フレームからの経過時間（ミリ秒）
    */
   update(time: number, delta: number): void {
-    if (!this.battle || !this.enemy) {
+    if (!this.battle || !this.stage || !this.timer) {
+      return;
+    }
+    
+    // タイマーを更新
+    this.timer.update(delta);
+    
+    // 時間切れチェック
+    if (this.timer.isTimeExpired()) {
+      this.onGameOver();
       return;
     }
     
@@ -173,6 +304,9 @@ export class BattleScene extends Phaser.Scene {
     const damage = this.battle.autoAttack(delta);
     
     if (damage && !damage.isZero()) {
+      // 累計ダメージを更新
+      this.totalDamage = this.totalDamage.add(damage);
+      
       // ダメージポップアップを表示
       this.showDamagePopup(damage);
       
@@ -180,10 +314,13 @@ export class BattleScene extends Phaser.Scene {
       this.updateHPBar();
       
       // 敵が倒されたかチェック
-      if (this.enemy.isDefeated()) {
+      if (this.stage.isEnemyDefeated()) {
         this.onEnemyDefeated();
       }
     }
+    
+    // UIを更新
+    this.updateUI();
     
     // 破棄されたポップアップを配列から削除
     this.damagePopups = this.damagePopups.filter(p => !p.isDestroyed());
