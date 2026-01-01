@@ -14,22 +14,27 @@ import { Timer, TimerConfig } from '../systems/Timer';
 import { GameOverScene, GameOverInfo } from './GameOverScene';
 import { Rebirth } from '../systems/Rebirth';
 import { Upgrade } from '../systems/Upgrade';
+import { Combo } from '../systems/Combo';
+import { loadSaveData, saveSaveData } from '../utils/Storage';
 
 export class BattleScene extends Phaser.Scene {
   private battle: Battle | null = null;
   private stage: Stage | null = null;
   private timer: Timer | null = null;
+  private combo: Combo | null = null;
   private hpBar: HPBar | null = null;
   private timerBar: HPBar | null = null;
   private damagePopups: DamagePopup[] = [];
   private baseDamage: number = 10;
   private attackLevel: number = 1;
-  private comboMultiplier: number = 1.0;
   private totalDamage: DecimalWrapper = DecimalWrapper.zero();
+  private isFullRun: boolean = true; // Full Runモードかどうか
   
   // UI要素
   private stageText: Phaser.GameObjects.Text | null = null;
   private timerText: Phaser.GameObjects.Text | null = null;
+  private comboText: Phaser.GameObjects.Text | null = null;
+  private comboBar: HPBar | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -44,7 +49,7 @@ export class BattleScene extends Phaser.Scene {
     
     // シーン遷移時のデータを処理
     const startStage = data?.startStage || 1;
-    // const isFullRun = data?.isFullRun !== false; // デフォルトはtrue（Phase 6で使用予定）
+    this.isFullRun = data?.isFullRun !== false; // デフォルトはtrue
     
     // 攻撃レベルをセーブデータから読み込む（0の場合は1として扱う）
     this.attackLevel = Math.max(1, Upgrade.getAttackLevel());
@@ -70,11 +75,16 @@ export class BattleScene extends Phaser.Scene {
    * @param startStage - 開始ステージ
    */
   private initializeSystems(startStage: number = 1): void {
+    // コンボシステム
+    // Full Runの場合は0から、Quick Skipの場合は0から（コンボはリセット）
+    this.combo = new Combo(0);
+    
     // バトルシステム
+    const comboMultiplier = this.combo.getComboMultiplier();
     const battleConfig: BattleConfig = {
       baseDamage: this.baseDamage,
       attackLevel: this.attackLevel,
-      comboMultiplier: this.comboMultiplier,
+      comboMultiplier: comboMultiplier,
     };
     this.battle = new Battle(battleConfig);
     
@@ -119,6 +129,22 @@ export class BattleScene extends Phaser.Scene {
       width: 300,
       height: 10,
     });
+    
+    // コンボ表示（Full Runの場合のみ）
+    if (this.isFullRun) {
+      this.comboText = this.add.text(20, 80, '', {
+        fontSize: '20px',
+        color: '#4A90E2',
+      });
+      
+      // コンボバー
+      this.comboBar = new HPBar(this, {
+        x: this.cameras.main.width / 2,
+        y: 80,
+        width: 300,
+        height: 10,
+      });
+    }
     
     this.updateUI();
   }
@@ -251,6 +277,20 @@ export class BattleScene extends Phaser.Scene {
       const ratio = this.timer.getTimeRatio();
       this.timerBar.updateHP(ratio);
     }
+    
+    // コンボ表示（Full Runの場合のみ）
+    if (this.isFullRun && this.combo) {
+      if (this.comboText) {
+        const comboCount = this.combo.getComboCount();
+        const multiplier = this.combo.getComboMultiplier();
+        this.comboText.setText(`Combo: ${comboCount} (x${multiplier.toFixed(1)})`);
+      }
+      
+      if (this.comboBar) {
+        const ratio = this.combo.getComboRatio();
+        this.comboBar.updateHP(ratio);
+      }
+    }
   }
 
   /**
@@ -262,6 +302,17 @@ export class BattleScene extends Phaser.Scene {
     }
     
     console.log(`Stage ${this.stage.getCurrentStage()} クリア！`);
+    
+    // Full Runの場合、コンボを追加
+    if (this.isFullRun && this.combo) {
+      this.combo.addCombo(1);
+      
+      // バトルシステムのコンボ倍率を更新
+      if (this.battle) {
+        const comboMultiplier = this.combo.getComboMultiplier();
+        this.battle.setComboMultiplier(comboMultiplier);
+      }
+    }
     
     // タイマーをリセット
     if (this.timer) {
@@ -282,14 +333,33 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
     
-    // 転生石を計算して獲得
+    // 転生石を計算
     const reachedStage = this.stage.getCurrentStage();
-    const gainedStones = Rebirth.gainRebirthStones(reachedStage);
+    let baseStones = Rebirth.calculateRebirthStones(reachedStage);
+    
+    // Full Runの場合、コンボ倍率を適用
+    if (this.isFullRun && this.combo) {
+      const comboMultiplier = this.combo.getComboMultiplier();
+      baseStones = Math.floor(baseStones * comboMultiplier);
+    }
+    
+    // 転生石を獲得
+    const currentSaveData = loadSaveData();
+    const currentStones = new DecimalWrapper(currentSaveData.rebirthStones);
+    const newStones = currentStones.add(baseStones);
+    
+    // セーブデータを更新
+    const updatedSaveData = {
+      ...currentSaveData,
+      rebirthStones: newStones.toString(),
+      maxStage: Math.max(currentSaveData.maxStage, reachedStage),
+    };
+    saveSaveData(updatedSaveData);
     
     // ゲームオーバー情報を設定
     const gameOverInfo: GameOverInfo = {
       reachedStage: reachedStage,
-      rebirthStones: gainedStones,
+      rebirthStones: baseStones,
       totalDamage: this.totalDamage,
     };
     
