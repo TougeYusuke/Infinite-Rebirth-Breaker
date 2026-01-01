@@ -33,7 +33,7 @@ export class Enemy {
   constructor(config: EnemyConfig) {
     this.baseHP = config.baseHP;
     this.stage = config.stage;
-    
+
     // HP計算: baseHP * (stage ^ 1.2)
     this.maxHP = DecimalWrapper.calculateEnemyHP(this.baseHP, this.stage);
     this.currentHP = new DecimalWrapper(this.maxHP.getValue());
@@ -66,7 +66,7 @@ export class Enemy {
     if (this.maxHP.isZero()) {
       return 0;
     }
-    
+
     const ratio = this.currentHP.div(this.maxHP);
     return Math.max(0, Math.min(1, ratio.toNumber()));
   }
@@ -78,23 +78,23 @@ export class Enemy {
    * @returns 実際に受けたダメージ
    */
   takeDamage(damage: DecimalWrapper | number): DecimalWrapper {
-    const damageDecimal = damage instanceof DecimalWrapper 
-      ? damage 
+    const damageDecimal = damage instanceof DecimalWrapper
+      ? damage
       : new DecimalWrapper(damage);
-    
+
     const oldHP = new DecimalWrapper(this.currentHP.getValue());
-    
+
     // ダメージを適用
     this.currentHP = this.currentHP.sub(damageDecimal);
-    
+
     // HPが0未満にならないようにする
     if (this.currentHP.isZeroOrLess()) {
       this.currentHP = DecimalWrapper.zero();
     }
-    
+
     // 実際に受けたダメージを計算
     const actualDamage = oldHP.sub(this.currentHP);
-    
+
     return actualDamage;
   }
 
