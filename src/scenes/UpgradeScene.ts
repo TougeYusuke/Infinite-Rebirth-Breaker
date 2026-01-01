@@ -79,7 +79,7 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#4A90E2',
       fontStyle: 'bold',
       backgroundColor: '#2a2a2a',
-      padding: { x: 20, y: 10 },
+      padding: { x: 40, y: 20 },
     }).setOrigin(0.5);
     
     upgradeButton.setInteractive({ useHandCursor: true });
@@ -87,12 +87,14 @@ export class UpgradeScene extends Phaser.Scene {
       this.handleUpgrade();
     });
     
-    currentY += 100;
+    currentY += 120;
     
     // 戻るボタン
     const backButton = this.add.text(centerX, currentY, '戻る', {
       fontSize: '24px',
-      color: '#cccccc',
+      color: '#ffffff',
+      backgroundColor: '#444444',
+      padding: { x: 30, y: 15 },
     }).setOrigin(0.5);
     
     backButton.setInteractive({ useHandCursor: true });

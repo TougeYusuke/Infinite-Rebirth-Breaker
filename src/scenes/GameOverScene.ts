@@ -83,7 +83,7 @@ export class GameOverScene extends Phaser.Scene {
       color: '#4A90E2',
       fontStyle: 'bold',
       backgroundColor: '#2a2a2a',
-      padding: { x: 15, y: 10 },
+      padding: { x: 30, y: 15 },
     }).setOrigin(0.5);
     
     fullRunButton.setInteractive({ useHandCursor: true });
@@ -91,7 +91,7 @@ export class GameOverScene extends Phaser.Scene {
       this.startFullRun();
     });
     
-    buttonY += 60;
+    buttonY += 80;
     
     // 「前線へ復帰（Quick Skip）」ボタン
     const maxStage = Rebirth.getMaxStage();
@@ -102,7 +102,7 @@ export class GameOverScene extends Phaser.Scene {
       color: '#F5A623',
       fontStyle: 'bold',
       backgroundColor: '#2a2a2a',
-      padding: { x: 15, y: 10 },
+      padding: { x: 30, y: 15 },
       align: 'center',
     }).setOrigin(0.5);
     
@@ -111,12 +111,15 @@ export class GameOverScene extends Phaser.Scene {
       this.startQuickSkip(quickSkipStage);
     });
     
-    buttonY += 80;
+    buttonY += 90;
     
     // 強化メニューボタン
     const upgradeButton = this.add.text(centerX, buttonY, '強化メニュー', {
-      fontSize: '20px',
-      color: '#cccccc',
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      backgroundColor: '#444444',
+      padding: { x: 30, y: 15 },
     }).setOrigin(0.5);
     
     upgradeButton.setInteractive({ useHandCursor: true });

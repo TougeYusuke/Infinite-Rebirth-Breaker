@@ -42,7 +42,6 @@ export class BattleScene extends Phaser.Scene {
 
   create(data?: { startStage?: number; isFullRun?: boolean }): void {
     // バトル画面の初期化
-    console.log('BattleScene: バトル開始');
     
     // 背景色
     this.cameras.main.setBackgroundColor('#2a2a2a');
@@ -183,27 +182,19 @@ export class BattleScene extends Phaser.Scene {
    * タップ処理
    */
   private handleTap(): void {
-    console.log('BattleScene: handleTap called');
-    
     if (!this.battle || !this.stage) {
-      console.log('BattleScene: handleTap - battle or stage is null');
       return;
     }
     
     const enemy = this.stage.getEnemy();
     if (!enemy) {
-      console.log('BattleScene: handleTap - enemy is null');
       return;
     }
-    
-    console.log('BattleScene: handleTap - enemy HP:', enemy.getCurrentHP().toString());
     
     // Tap Attack
     const damage = this.battle.tapAttack();
     
     if (damage && !damage.isZero()) {
-      console.log('BattleScene: handleTap - damage:', damage.toString());
-      
       // 累計ダメージを更新
       this.totalDamage = this.totalDamage.add(damage);
       
@@ -217,8 +208,6 @@ export class BattleScene extends Phaser.Scene {
       if (this.stage.isEnemyDefeated()) {
         this.onEnemyDefeated();
       }
-    } else {
-      console.log('BattleScene: handleTap - damage is null or zero:', damage);
     }
   }
 
@@ -300,8 +289,6 @@ export class BattleScene extends Phaser.Scene {
     if (!this.stage) {
       return;
     }
-    
-    console.log(`Stage ${this.stage.getCurrentStage()} クリア！`);
     
     // Full Runの場合、コンボを追加
     if (this.isFullRun && this.combo) {
