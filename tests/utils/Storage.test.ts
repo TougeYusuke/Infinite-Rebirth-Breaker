@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadSaveData, saveSaveData, resetSaveData, DEFAULT_SAVE_DATA } from '../../src/utils/Storage';
-import { SaveData } from '../../src/types/SaveData';
+import { loadSaveData, saveSaveData, resetSaveData } from '../../src/utils/Storage';
+import { SaveData, DEFAULT_SAVE_DATA } from '../../src/types/SaveData';
 
 // LocalStorageのモック
 const localStorageMock = (() => {
@@ -38,7 +38,11 @@ describe('Storage', () => {
   describe('loadSaveData', () => {
     it('セーブデータが存在しない場合はデフォルト値を返す', () => {
       const data = loadSaveData();
-      expect(data).toEqual(DEFAULT_SAVE_DATA);
+      // lastPlayedは動的に生成されるため、除外して比較
+      expect(data.maxStage).toBe(DEFAULT_SAVE_DATA.maxStage);
+      expect(data.rebirthStones).toBe(DEFAULT_SAVE_DATA.rebirthStones);
+      expect(data.attackLevel).toBe(DEFAULT_SAVE_DATA.attackLevel);
+      expect(data.lastPlayed).toBeGreaterThan(0);
     });
 
     it('セーブデータが存在する場合は読み込む', () => {
@@ -88,7 +92,11 @@ describe('Storage', () => {
       resetSaveData();
       
       const data = loadSaveData();
-      expect(data).toEqual(DEFAULT_SAVE_DATA);
+      // lastPlayedは動的に生成されるため、除外して比較
+      expect(data.maxStage).toBe(DEFAULT_SAVE_DATA.maxStage);
+      expect(data.rebirthStones).toBe(DEFAULT_SAVE_DATA.rebirthStones);
+      expect(data.attackLevel).toBe(DEFAULT_SAVE_DATA.attackLevel);
+      expect(data.lastPlayed).toBeGreaterThan(0);
     });
   });
 });
