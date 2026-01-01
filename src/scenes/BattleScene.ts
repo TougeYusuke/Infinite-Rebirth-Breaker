@@ -46,8 +46,8 @@ export class BattleScene extends Phaser.Scene {
     const startStage = data?.startStage || 1;
     // const isFullRun = data?.isFullRun !== false; // デフォルトはtrue（Phase 6で使用予定）
     
-    // 攻撃レベルをセーブデータから読み込む
-    this.attackLevel = Upgrade.getAttackLevel();
+    // 攻撃レベルをセーブデータから読み込む（0の場合は1として扱う）
+    this.attackLevel = Math.max(1, Upgrade.getAttackLevel());
     
     // システムを初期化
     this.initializeSystems(startStage);
@@ -157,19 +157,27 @@ export class BattleScene extends Phaser.Scene {
    * タップ処理
    */
   private handleTap(): void {
+    console.log('BattleScene: handleTap called');
+    
     if (!this.battle || !this.stage) {
+      console.log('BattleScene: handleTap - battle or stage is null');
       return;
     }
     
     const enemy = this.stage.getEnemy();
     if (!enemy) {
+      console.log('BattleScene: handleTap - enemy is null');
       return;
     }
+    
+    console.log('BattleScene: handleTap - enemy HP:', enemy.getCurrentHP().toString());
     
     // Tap Attack
     const damage = this.battle.tapAttack();
     
     if (damage && !damage.isZero()) {
+      console.log('BattleScene: handleTap - damage:', damage.toString());
+      
       // 累計ダメージを更新
       this.totalDamage = this.totalDamage.add(damage);
       
@@ -183,6 +191,8 @@ export class BattleScene extends Phaser.Scene {
       if (this.stage.isEnemyDefeated()) {
         this.onEnemyDefeated();
       }
+    } else {
+      console.log('BattleScene: handleTap - damage is null or zero:', damage);
     }
   }
 

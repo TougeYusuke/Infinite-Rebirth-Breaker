@@ -301,7 +301,9 @@ export class DecimalWrapper {
     comboMultiplier: number = 1
   ): DecimalWrapper {
     const base = baseDamage instanceof DecimalWrapper ? baseDamage.getValue() : new Decimal(baseDamage);
-    const levelMultiplier = new Decimal(attackLevel);
+    // attackLevelが0以下の場合は1として扱う（最低限のダメージを保証）
+    const effectiveLevel = Math.max(1, attackLevel);
+    const levelMultiplier = new Decimal(effectiveLevel);
     const comboMultiplierDecimal = new Decimal(comboMultiplier);
     
     return new DecimalWrapper(base.mul(levelMultiplier).mul(comboMultiplierDecimal));

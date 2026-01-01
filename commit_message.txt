@@ -1,32 +1,12 @@
-feat: Phase 5完了 - 転生システムの実装
+fix: タップ攻撃が動作しない問題を修正
 
-- 転生システム（Rebirth.ts）の実装
-  - 転生石計算（Math.floor(stage ^ 1.5)）
-  - 転生石獲得・消費処理
-  - 最高到達ステージの管理
-- 強化システム（Upgrade.ts）の実装
-  - 攻撃力LvUPのコスト計算（10 * (currentLevel + 1)）
-  - 攻撃力LvUPの効果計算（1.1 * level 倍率）
-  - 強化実行処理
-- 強化シーン（UpgradeScene.ts）の実装
-  - 強化メニューの表示
-  - 強化ボタンの実装
-- 再開選択機能の実装
-  - 「最初から無双する（Full Run）」ボタン
-  - 「前線へ復帰（Quick Skip）」ボタン
-  - 開始地点の計算ロジック
-- GameOverSceneへの統合
-  - 再開選択ボタンの追加
-  - 強化メニューボタンの追加
-- BattleSceneへの統合
-  - シーン遷移時のデータ受け取り
-  - 転生石獲得処理
-  - 攻撃レベルの読み込み
-- テストファイルの作成
-  - Rebirth.test.ts (10 tests)
-  - Upgrade.test.ts (10 tests)
+問題:
+- attackLevelが0の場合、ダメージが0になってタップ攻撃が効かない
 
-Phase 5: 転生システム ✅ 完了（100%）
-全体進捗: 71% (5/7フェーズ完了)
-テスト: 115テスト（すべてパス）
+修正内容:
+- DecimalWrapper.calculateDamage()でattackLevelが0以下の場合、1として扱うように修正
+- BattleSceneでattackLevelを読み込む際に、0の場合は1として扱うように修正
+- デバッグログを追加して、タップイベントの動作を確認できるようにした
+
+これにより、初期状態（attackLevel=0）でもタップ攻撃が正常に動作するようになりました。
 
