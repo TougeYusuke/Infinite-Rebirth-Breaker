@@ -6,6 +6,9 @@
 
 import { SaveData, DEFAULT_SAVE_DATA } from '../types/SaveData';
 
+// SaveData型をエクスポート（他のモジュールで使用するため）
+export type { SaveData };
+
 const STORAGE_KEY = 'infiniteRebirthBreaker_saveData';
 
 /**

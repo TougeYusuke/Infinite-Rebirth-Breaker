@@ -7,6 +7,7 @@
 import Phaser from 'phaser';
 import { DecimalWrapper } from '../utils/Decimal';
 import { formatNumber } from '../utils/Formatter';
+import { Rebirth } from '../systems/Rebirth';
 
 /**
  * ゲームオーバー情報
@@ -73,23 +74,73 @@ export class GameOverScene extends Phaser.Scene {
       }).setOrigin(0.5);
     }
     
-    // 再開ボタン（仮実装 - 後で実装）
-    const restartButton = this.add.text(centerX, centerY + 150, 'タップして再開', {
-      fontSize: '32px',
+    // 再開選択ボタン
+    let buttonY = centerY + 100;
+    
+    // 「最初から無双する（Full Run）」ボタン
+    const fullRunButton = this.add.text(centerX, buttonY, '最初から無双する（Full Run）', {
+      fontSize: '24px',
       color: '#4A90E2',
       fontStyle: 'bold',
+      backgroundColor: '#2a2a2a',
+      padding: { x: 15, y: 10 },
     }).setOrigin(0.5);
     
-    restartButton.setInteractive({ useHandCursor: true });
-    restartButton.on('pointerdown', () => {
-      // 再開処理（後で実装）
-      this.scene.start('BattleScene');
+    fullRunButton.setInteractive({ useHandCursor: true });
+    fullRunButton.on('pointerdown', () => {
+      this.startFullRun();
     });
     
-    // タップで再開
-    this.input.once('pointerdown', () => {
-      this.scene.start('BattleScene');
+    buttonY += 60;
+    
+    // 「前線へ復帰（Quick Skip）」ボタン
+    const maxStage = Rebirth.getMaxStage();
+    const quickSkipStage = Math.max(1, maxStage - 5);
+    
+    const quickSkipButton = this.add.text(centerX, buttonY, `前線へ復帰（Quick Skip）\nステージ${quickSkipStage}から開始`, {
+      fontSize: '20px',
+      color: '#F5A623',
+      fontStyle: 'bold',
+      backgroundColor: '#2a2a2a',
+      padding: { x: 15, y: 10 },
+      align: 'center',
+    }).setOrigin(0.5);
+    
+    quickSkipButton.setInteractive({ useHandCursor: true });
+    quickSkipButton.on('pointerdown', () => {
+      this.startQuickSkip(quickSkipStage);
     });
+    
+    buttonY += 80;
+    
+    // 強化メニューボタン
+    const upgradeButton = this.add.text(centerX, buttonY, '強化メニュー', {
+      fontSize: '20px',
+      color: '#cccccc',
+    }).setOrigin(0.5);
+    
+    upgradeButton.setInteractive({ useHandCursor: true });
+    upgradeButton.on('pointerdown', () => {
+      this.scene.start('UpgradeScene');
+    });
+  }
+
+  /**
+   * 「最初から無双する（Full Run）」で開始
+   */
+  private startFullRun(): void {
+    // ステージ1から開始
+    this.scene.start('BattleScene', { startStage: 1, isFullRun: true });
+  }
+
+  /**
+   * 「前線へ復帰（Quick Skip）」で開始
+   * 
+   * @param startStage - 開始ステージ
+   */
+  private startQuickSkip(startStage: number): void {
+    // 指定ステージから開始
+    this.scene.start('BattleScene', { startStage: startStage, isFullRun: false });
   }
 }
 

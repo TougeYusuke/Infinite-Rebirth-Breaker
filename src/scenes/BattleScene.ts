@@ -12,6 +12,8 @@ import { DecimalWrapper } from '../utils/Decimal';
 import { Stage, StageConfig } from '../systems/Stage';
 import { Timer, TimerConfig } from '../systems/Timer';
 import { GameOverScene, GameOverInfo } from './GameOverScene';
+import { Rebirth } from '../systems/Rebirth';
+import { Upgrade } from '../systems/Upgrade';
 
 export class BattleScene extends Phaser.Scene {
   private battle: Battle | null = null;
@@ -33,15 +35,22 @@ export class BattleScene extends Phaser.Scene {
     super({ key: 'BattleScene' });
   }
 
-  create(): void {
+  create(data?: { startStage?: number; isFullRun?: boolean }): void {
     // バトル画面の初期化
     console.log('BattleScene: バトル開始');
     
     // 背景色
     this.cameras.main.setBackgroundColor('#2a2a2a');
     
+    // シーン遷移時のデータを処理
+    const startStage = data?.startStage || 1;
+    // const isFullRun = data?.isFullRun !== false; // デフォルトはtrue（Phase 6で使用予定）
+    
+    // 攻撃レベルをセーブデータから読み込む
+    this.attackLevel = Upgrade.getAttackLevel();
+    
     // システムを初期化
-    this.initializeSystems();
+    this.initializeSystems(startStage);
     
     // 最初の敵を生成
     this.spawnEnemy();
@@ -57,8 +66,10 @@ export class BattleScene extends Phaser.Scene {
 
   /**
    * システムを初期化
+   * 
+   * @param startStage - 開始ステージ
    */
-  private initializeSystems(): void {
+  private initializeSystems(startStage: number = 1): void {
     // バトルシステム
     const battleConfig: BattleConfig = {
       baseDamage: this.baseDamage,
@@ -70,7 +81,7 @@ export class BattleScene extends Phaser.Scene {
     // ステージシステム
     const stageConfig: StageConfig = {
       baseHP: 100,
-      startStage: 1,
+      startStage: startStage,
     };
     this.stage = new Stage(stageConfig);
     
@@ -80,6 +91,9 @@ export class BattleScene extends Phaser.Scene {
     };
     this.timer = new Timer(timerConfig);
     this.timer.start();
+    
+    // 累計ダメージをリセット
+    this.totalDamage = DecimalWrapper.zero();
   }
 
   /**
@@ -258,14 +272,14 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
     
-    // 転生石を計算
+    // 転生石を計算して獲得
     const reachedStage = this.stage.getCurrentStage();
-    const rebirthStones = DecimalWrapper.calculateRebirthStones(reachedStage);
+    const gainedStones = Rebirth.gainRebirthStones(reachedStage);
     
     // ゲームオーバー情報を設定
     const gameOverInfo: GameOverInfo = {
       reachedStage: reachedStage,
-      rebirthStones: rebirthStones,
+      rebirthStones: gainedStones,
       totalDamage: this.totalDamage,
     };
     
