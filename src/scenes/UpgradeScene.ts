@@ -26,6 +26,10 @@ export class UpgradeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#1a1a1a');
     
     const centerX = this.cameras.main.width / 2;
+    const screenHeight = this.cameras.main.height;
+    const safeAreaBottom = 100; // 下部のセーフエリア（Safariのツールバー分）
+    const availableHeight = screenHeight - safeAreaBottom;
+    
     let currentY = 100;
     
     // タイトル
@@ -35,7 +39,7 @@ export class UpgradeScene extends Phaser.Scene {
       fontStyle: 'bold',
     }).setOrigin(0.5);
     
-    currentY += 80;
+    currentY += 70; // 間隔を詰める（80 → 70）
     
     // 現在の転生石表示
     const currentStones = Rebirth.getCurrentRebirthStones();
@@ -44,7 +48,7 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#ffd700',
     }).setOrigin(0.5);
     
-    currentY += 60;
+    currentY += 50; // 間隔を詰める（60 → 50）
     
     // 強化情報を取得
     this.upgradeInfo = Upgrade.getAttackLevelInfo();
@@ -55,7 +59,7 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(0.5);
     
-    currentY += 50;
+    currentY += 45; // 間隔を詰める（50 → 45）
     
     // コスト表示
     this.add.text(centerX, currentY, `コスト: ${this.upgradeInfo.cost} 転生石`, {
@@ -63,7 +67,7 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#cccccc',
     }).setOrigin(0.5);
     
-    currentY += 40;
+    currentY += 35; // 間隔を詰める（40 → 35）
     
     // 効果表示
     this.add.text(centerX, currentY, `効果: ダメージ ${this.upgradeInfo.effect.toFixed(1)}倍`, {
@@ -71,7 +75,7 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#4A90E2',
     }).setOrigin(0.5);
     
-    currentY += 80;
+    currentY += 70; // 間隔を詰める（80 → 70）
     
     // 強化ボタン
     const upgradeButton = this.add.text(centerX, currentY, '強化する', {
@@ -87,9 +91,13 @@ export class UpgradeScene extends Phaser.Scene {
       this.handleUpgrade();
     });
     
-    currentY += 120;
+    currentY += 100; // 間隔を詰める（120 → 100）
     
-    // 戻るボタン
+    // 戻るボタン（画面下部のセーフエリア内に配置）
+    // ボタンが画面外に出ないように、最大位置を制限
+    const maxButtonY = availableHeight - 50; // 下部セーフエリアの上に配置
+    currentY = Math.min(currentY, maxButtonY);
+    
     const backButton = this.add.text(centerX, currentY, '戻る', {
       fontSize: '24px',
       color: '#ffffff',

@@ -75,7 +75,13 @@ export class GameOverScene extends Phaser.Scene {
     }
     
     // 再開選択ボタン
-    let buttonY = centerY + 100;
+    // 画面下部のセーフエリア（SafariのUIを考慮）を確保
+    const screenHeight = this.cameras.main.height;
+    const safeAreaBottom = 100; // 下部のセーフエリア（Safariのツールバー分）
+    const availableHeight = screenHeight - safeAreaBottom;
+    
+    // ボタンの配置を調整（間隔を詰めて、すべてのボタンが画面内に収まるように）
+    let buttonY = centerY + 60; // 初期位置を上に移動
     
     // 「最初から無双する（Full Run）」ボタン
     const fullRunButton = this.add.text(centerX, buttonY, '最初から無双する（Full Run）', {
@@ -91,7 +97,7 @@ export class GameOverScene extends Phaser.Scene {
       this.startFullRun();
     });
     
-    buttonY += 80;
+    buttonY += 70; // 間隔を詰める（80 → 70）
     
     // 「前線へ復帰（Quick Skip）」ボタン
     const maxStage = Rebirth.getMaxStage();
@@ -111,9 +117,13 @@ export class GameOverScene extends Phaser.Scene {
       this.startQuickSkip(quickSkipStage);
     });
     
-    buttonY += 90;
+    buttonY += 70; // 間隔を詰める（90 → 70）
     
-    // 強化メニューボタン
+    // 強化メニューボタン（画面下部のセーフエリア内に配置）
+    // ボタンが画面外に出ないように、最大位置を制限
+    const maxButtonY = availableHeight - 50; // 下部セーフエリアの上に配置
+    buttonY = Math.min(buttonY, maxButtonY);
+    
     const upgradeButton = this.add.text(centerX, buttonY, '強化メニュー', {
       fontSize: '24px',
       color: '#ffffff',
