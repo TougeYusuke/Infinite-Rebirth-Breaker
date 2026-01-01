@@ -40,7 +40,6 @@ const DAMAGE_THRESHOLD_MEDIUM = 100000; // 100000未満は中、それ以上は�
 export class DamagePopup {
   private text: Phaser.GameObjects.Text;
   private scene: Phaser.Scene;
-  private damage: DecimalWrapper;
   private tween: Phaser.Tweens.Tween | null = null;
 
   /**
@@ -51,7 +50,6 @@ export class DamagePopup {
    */
   constructor(scene: Phaser.Scene, config: DamagePopupConfig) {
     this.scene = scene;
-    this.damage = config.damage;
     
     // ダメージの色を決定
     const color = this.getDamageColor(config.damage);

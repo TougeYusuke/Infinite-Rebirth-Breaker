@@ -5,7 +5,6 @@
  */
 
 import Phaser from 'phaser';
-import { DecimalWrapper } from '../utils/Decimal';
 
 /**
  * HPバーの設定
@@ -23,7 +22,6 @@ export interface HPBarConfig {
  * PhaserのGraphicsオブジェクトを使用してHPバーを描画
  */
 export class HPBar {
-  private scene: Phaser.Scene;
   private backgroundBar: Phaser.GameObjects.Graphics;
   private healthBar: Phaser.GameObjects.Graphics;
   private x: number;
@@ -39,7 +37,6 @@ export class HPBar {
    * @param config - HPバーの設定
    */
   constructor(scene: Phaser.Scene, config: HPBarConfig) {
-    this.scene = scene;
     this.x = config.x;
     this.y = config.y;
     this.width = config.width;

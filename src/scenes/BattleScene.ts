@@ -6,7 +6,6 @@
 
 import Phaser from 'phaser';
 import { Battle, BattleConfig } from '../core/Battle';
-import { Enemy } from '../core/Enemy';
 import { DamagePopup } from '../ui/DamagePopup';
 import { HPBar } from '../ui/HPBar';
 import { DecimalWrapper } from '../utils/Decimal';
@@ -283,10 +282,10 @@ export class BattleScene extends Phaser.Scene {
   /**
    * 更新処理（毎フレーム呼び出される）
    * 
-   * @param time - 経過時間（ミリ秒）
+   * @param _time - 経過時間（ミリ秒）（未使用）
    * @param delta - 前フレームからの経過時間（ミリ秒）
    */
-  update(time: number, delta: number): void {
+  update(_time: number, delta: number): void {
     if (!this.battle || !this.stage || !this.timer) {
       return;
     }
