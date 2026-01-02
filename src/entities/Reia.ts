@@ -290,13 +290,13 @@ export class Reia extends Phaser.GameObjects.Container {
     // タイプに応じたポーズ
     switch (type) {
         case 'focus':
-            this.sprite.setFrame(2); // 上段右（キリッ）
+            this.sprite.setTexture('reia_focus');
             break;
         case 'burst':
-            this.sprite.setFrame(4); // 中段中央（レンチ攻撃）
+            this.sprite.setTexture('reia_attack'); // 攻撃画像
             break;
         case 'creative':
-            this.sprite.setFrame(5); // 中段右（指差し）
+            this.sprite.setTexture('reia_attack'); // 攻撃画像
             break;
     }
 
