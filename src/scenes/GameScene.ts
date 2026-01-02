@@ -22,6 +22,7 @@ import { DecimalWrapper } from '../utils/Decimal';
 import { Rebirth } from '../systems/Rebirth';
 import { GameOverScene, GameOverInfo } from './GameOverScene';
 import { AwakeningEffect } from '../effects/AwakeningEffect';
+import { ScreenClearEffect } from '../effects/ScreenClearEffect';
 
 export class GameScene extends Phaser.Scene {
   private reia: Reia | null = null;
@@ -35,6 +36,7 @@ export class GameScene extends Phaser.Scene {
   private debugPanel: DebugPanel | null = null;
   private waveSystem: WaveSystem | null = null;
   private awakeningEffect: AwakeningEffect | null = null;
+  private screenClearEffect: ScreenClearEffect | null = null;
   private totalDamage: DecimalWrapper = new DecimalWrapper(0);
   private isGameOver: boolean = false;
   private startWave: number = 1; // 開始Wave数（Quick Skip用）
@@ -149,6 +151,9 @@ export class GameScene extends Phaser.Scene {
     
     // 覚醒モードのエフェクト
     this.awakeningEffect = new AwakeningEffect(this);
+    
+    // 画面クリア演出
+    this.screenClearEffect = new ScreenClearEffect(this);
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
@@ -701,6 +706,11 @@ export class GameScene extends Phaser.Scene {
       this.awakeningEffect.update();
     }
     
+    // 画面クリア演出を更新
+    if (this.screenClearEffect) {
+      this.screenClearEffect.update();
+    }
+    
     // デバッグパネルを更新
     if (this.debugPanel) {
       this.debugPanel.update(() => {
@@ -979,6 +989,8 @@ export class GameScene extends Phaser.Scene {
     
     // 画面内のタスクを一気にクリア
     const tasks = this.taskManager.getTasks();
+    const taskCount = tasks.length;
+    
     for (const task of tasks) {
       // ダメージポップアップを表示
       this.showDamagePopup(task.x, task.y, new DecimalWrapper(999999));
@@ -987,12 +999,17 @@ export class GameScene extends Phaser.Scene {
       this.taskManager.removeTask(task);
     }
     
+    // 画面クリア演出を開始（タスクが複数ある場合のみ）
+    if (taskCount > 0 && this.screenClearEffect) {
+      this.screenClearEffect.start();
+    }
+    
     // ストレスを0%にリセット
     this.stressSystem.reset();
     
     // コンボを追加（爆発覚醒で倒した分）
     if (this.combo) {
-      this.combo.addCombo(tasks.length);
+      this.combo.addCombo(taskCount);
     }
     
     // エフェクトをすぐに停止（爆発覚醒は一瞬）
