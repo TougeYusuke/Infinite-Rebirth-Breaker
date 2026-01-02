@@ -5,31 +5,31 @@
 
 ---
 
-## 1. れいあキャラクター（メインキャラ）
+## 1. れいあキャラクター（メインキャラ） - Bing Image Creator最適化版
 
-### 基本プロンプト
+**ポイント:** 「全身表示」「家具なし」を実現するため、`standing pose`（立ちポーズ）や `floating`（浮遊）を指定し、背景を `simple white background`（シンプルな白背景）に固定します。
+
+### 基本プロンプト（立ち絵・通常）
 ```
-A cute female software engineer character named "Reia" (れいあ), 
-anime style, chibi/cute design, 
-wearing casual office clothes (hoodie or cardigan), 
-sitting at a computer desk, 
-surrounded by code and bugs floating around, 
-bright and cheerful expression, 
-pink/purple color scheme, 
-high quality, detailed, 
-white background or transparent background
+A video game sprite asset, full body shot of a cute chibi anime girl named Reia, software engineer, pink hair, wearing a casual oversized hoodie, standing pose, holding a tablet computer, happy expression, simple white background, flat color, 2d vector art style, no desk, no chair, high quality
 ```
 
-### 表情バリエーション
-- **平常心（Normal）**: `calm, relaxed expression, slight smile`
-- **焦り（Anxious）**: `worried expression, sweat drop, slightly panicked`
-- **パニック（Panic）**: `panicked expression, wide eyes, flustered`
-- **集中（Focused）**: `determined expression, focused eyes, confident smile`
+### アクション・攻撃（コーディング攻撃）
+```
+A video game sprite asset, full body shot of a cute chibi anime girl named Reia, software engineer, pink hair, wearing a casual oversized hoodie, dynamic action pose, throwing glowing code symbols with hand, determined expression, simple white background, flat color, 2d vector art style, no desk, no chair
+```
 
-### アニメーション用（複数フレーム）
-- **待機**: `sitting at desk, typing on keyboard, idle animation frame`
-- **タップ時**: `jumping slightly, excited expression, hands raised`
-- **覚醒モード**: `glowing aura, determined expression, power-up effect`
+### ダメージ・パニック（被弾時・ピンチ）
+```
+A video game sprite asset, full body shot of a cute chibi anime girl named Reia, software engineer, pink hair, wearing a casual oversized hoodie, shocked panicked expression, stumbling back pose, simple white background, flat color, 2d vector art style, no desk, no chair
+```
+
+### 覚醒モード（スーパーハッカー状態）
+```
+A video game sprite asset, full body shot of a cute chibi anime girl named Reia, software engineer, pink hair, wearing a casual oversized hoodie, floating in air, glowing blue aura, intense focused expression, typing on a holographic keyboard, simple white background, flat color, 2d vector art style, no desk, no chair
+```
+
+---
 
 ---
 
