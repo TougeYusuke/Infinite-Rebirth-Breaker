@@ -6,7 +6,8 @@
 
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
-import { BattleScene } from './scenes/BattleScene';
+import { GameScene } from './scenes/GameScene';
+import { BattleScene } from './scenes/BattleScene'; // 旧実装（後で削除予定）
 import { GameOverScene } from './scenes/GameOverScene';
 import { UpgradeScene } from './scenes/UpgradeScene';
 
@@ -17,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 667,
   parent: 'game-container',
   backgroundColor: '#1a1a1a',
-  scene: [BootScene, BattleScene, GameOverScene, UpgradeScene],
+  scene: [BootScene, GameScene, BattleScene, GameOverScene, UpgradeScene], // GameSceneを追加
   physics: {
     default: 'arcade',
     arcade: {

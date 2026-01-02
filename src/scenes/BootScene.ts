@@ -20,8 +20,8 @@ export class BootScene extends Phaser.Scene {
     // 起動処理
     console.log('BootScene: ゲーム起動');
     
-    // BattleSceneに遷移
-    this.scene.start('BattleScene');
+    // GameSceneに遷移（新仕様）
+    this.scene.start('GameScene');
   }
 }
 

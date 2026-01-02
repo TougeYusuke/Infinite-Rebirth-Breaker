@@ -120,23 +120,23 @@ export class GameOverScene extends Phaser.Scene {
     const screenHeight = this.cameras.main.height;
     const safeAreaBottom = 100; // 下部のセーフエリア（Safariのツールバー分）
     const availableHeight = screenHeight - safeAreaBottom;
-    
+
     // 前のボタンから十分な間隔を空ける
     const minButtonY = buttonY + 100;
-    
+
     // 画面下部に配置するが、最低ラインを下回らないようにする
     // availableHeight - 50 (ボタン半分の高さ) と minButtonY の大きい方を使用する
     // ただし、画面外に出ないように上限も設ける必要があるが、
     // ここでは「重ならないこと」を優先し、下に伸びることを許容する（スクロールできないが重なりよりはマシ）
     // 今回は画面内に収めるために、要素を上に詰めたので、minButtonYで配置しても収まるはず
-    
+
     // 最後のボタン位置決定
     let finalButtonY = minButtonY;
-    
+
     // もし画面下部に余裕があれば、少し下に寄せる（見た目のバランス）
     if (finalButtonY < availableHeight - 50) {
-        // 下詰めにする場合：finalButtonY = availableHeight - 50;
-        // 今回は均等配置気味にしたいので、minButtonYを採用
+      // 下詰めにする場合：finalButtonY = availableHeight - 50;
+      // 今回は均等配置気味にしたいので、minButtonYを採用
     }
 
     const upgradeButton = this.add.text(centerX, finalButtonY, '強化メニュー', {
