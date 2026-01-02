@@ -114,20 +114,8 @@ export class Reia extends Phaser.GameObjects.Container {
         return;
       }
       
-      // Container内のスプライトは setTexture が効かない場合があるため、
-      // 一度削除して再作成する
-      const oldX = this.sprite.x;
-      const oldY = this.sprite.y;
-      const oldScale = this.sprite.scaleX;
-      
-      this.sprite.destroy();
-      
-      // 新しいテクスチャでスプライトを再作成
-      this.sprite = this.scene.add.sprite(oldX, oldY, 'reia_attack');
-      this.sprite.setScale(oldScale);
-      this.sprite.setOrigin(0.5, 0.5);
-      this.add(this.sprite);
-      
+      // changeTextureメソッドを使用してテクスチャを変更
+      this.changeTexture('reia_attack');
       console.log('攻撃画像に切り替えました: reia_attack');
       
       // 一定時間後に待機ポーズに戻る（表示時間を少し長くする）
