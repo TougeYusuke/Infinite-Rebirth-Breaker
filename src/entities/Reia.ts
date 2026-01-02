@@ -51,16 +51,16 @@ export class Reia extends Phaser.GameObjects.Container {
 
   constructor(scene: Phaser.Scene, config: ReiaConfig) {
     super(scene, config.x, config.y);
-    
+
     // 元のY座標を保存
     this.baseY = config.y;
-    
+
     // シーンに追加
     scene.add.existing(this);
-    
+
     // スプライトの作成（プロトタイプではシンプルな図形で表現）
     this.createSprite();
-    
+
     // 初期アニメーション
     this.playIdleAnimation();
   }
@@ -71,15 +71,15 @@ export class Reia extends Phaser.GameObjects.Container {
   private createSprite(): void {
     // 初期画像を作成（通常状態）
     this.sprite = this.scene.add.sprite(0, 0, 'reia_normal');
-    
+
     // サイズ調整
     // 個別画像はサイズがバラバラの可能性があるため、必要に応じて調整
     // ここでは基準サイズに合わせてスケールを設定するか、縮小率を指定する
     this.sprite.setScale(0.25);
-    
+
     // アンカー調整
     this.sprite.setOrigin(0.5, 0.5);
-    
+
     this.add(this.sprite);
   }
 
@@ -87,6 +87,9 @@ export class Reia extends Phaser.GameObjects.Container {
    * 待機アニメーション
    */
   playIdleAnimation(): void {
+    // 既存のアニメーションを停止
+    this.scene.tweens.killTweensOf(this);
+    
     if (this.sprite) {
       this.changeTexture('reia_normal');
     }
@@ -114,12 +117,15 @@ export class Reia extends Phaser.GameObjects.Container {
         return;
       }
       
+      // 既存のアニメーションを停止（連打対策）
+      this.scene.tweens.killTweensOf(this);
+      
       // changeTextureメソッドを使用してテクスチャを変更
       this.changeTexture('reia_attack');
       console.log('攻撃画像に切り替えました: reia_attack');
       
-      // 一定時間後に待機ポーズに戻る（表示時間を少し長くする）
-      this.scene.time.delayedCall(500, () => {
+      // 一定時間後に待機ポーズに戻る（表示時間を長くする）
+      this.scene.time.delayedCall(1000, () => {
         if (this.emotionState === EmotionState.NORMAL) {
             this.playIdleAnimation();
         } else {
@@ -128,8 +134,6 @@ export class Reia extends Phaser.GameObjects.Container {
       });
     }
 
-    // 既存のアニメーションを停止（連打対策）
-    this.scene.tweens.killTweensOf(this);
     this.y = this.baseY; // 位置リセット
     
     // 前に飛び出す動き
@@ -158,22 +162,22 @@ export class Reia extends Phaser.GameObjects.Container {
 
     // HP状態に応じた表情
     const hpRatio = this.hp / this.maxHp;
-    
+
     // 優先度高：ゲームオーバー/気絶
     if (hpRatio <= 0) {
-        this.changeTexture('reia_damage');
-        return;
+      this.changeTexture('reia_damage');
+      return;
     }
 
     // ストレス/HPによる状態変化
     if (this.stressLevel >= 80 || hpRatio <= 0.2) {
-        this.changeTexture('reia_panic');
+      this.changeTexture('reia_panic');
     } else if (this.stressLevel >= 50) {
-        this.changeTexture('reia_anxious');
+      this.changeTexture('reia_anxious');
     } else if (this.comboCount >= 10) {
-        this.changeTexture('reia_focus');
+      this.changeTexture('reia_focus');
     } else {
-        this.changeTexture('reia_normal');
+      this.changeTexture('reia_normal');
     }
   }
 
@@ -185,36 +189,36 @@ export class Reia extends Phaser.GameObjects.Container {
       console.warn(`changeTexture: スプライトが存在しません (${textureKey})`);
       return;
     }
-    
+
     // 画像が読み込まれているか確認
     const texture = this.scene.textures.get(textureKey);
     if (!texture) {
       console.warn(`changeTexture: テクスチャ "${textureKey}" が読み込まれていません`);
       return;
     }
-    
+
     // 現在のスプライトの状態を保存
     const oldX = this.sprite.x;
     const oldY = this.sprite.y;
     const oldScale = this.sprite.scaleX;
-    
+
     console.log(`changeTexture: ${textureKey} に切り替え (x=${oldX}, y=${oldY}, scale=${oldScale})`);
-    
+
     // Containerからスプライトを削除
     this.remove(this.sprite);
-    
+
     // 古いスプライトを削除
     this.sprite.destroy();
     this.sprite = null;
-    
+
     // 新しいテクスチャでスプライトを再作成
     this.sprite = this.scene.add.sprite(oldX, oldY, textureKey);
     this.sprite.setScale(oldScale);
     this.sprite.setOrigin(0.5, 0.5);
-    
+
     // Containerに追加
     this.add(this.sprite);
-    
+
     console.log(`changeTexture: スプライト再作成完了 (texture=${this.sprite.texture.key})`);
   }
 
@@ -329,15 +333,15 @@ export class Reia extends Phaser.GameObjects.Container {
 
     // タイプに応じたポーズ
     switch (type) {
-        case 'focus':
-            this.changeTexture('reia_focus');
-            break;
-        case 'burst':
-            this.changeTexture('reia_attack'); // 攻撃画像
-            break;
-        case 'creative':
-            this.changeTexture('reia_attack'); // 攻撃画像
-            break;
+      case 'focus':
+        this.changeTexture('reia_focus');
+        break;
+      case 'burst':
+        this.changeTexture('reia_attack'); // 攻撃画像
+        break;
+      case 'creative':
+        this.changeTexture('reia_attack'); // 攻撃画像
+        break;
     }
 
     // 演出エフェクト
