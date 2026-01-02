@@ -11,6 +11,7 @@ import { Combo } from '../systems/Combo';
 import { TaskManager, TaskManagerConfig } from '../systems/TaskManager';
 import { AttackSystem, AttackSystemConfig } from '../systems/AttackSystem';
 import { TaskRewardSystem } from '../systems/TaskRewardSystem';
+import { AwakeningSystem, AwakeningType } from '../systems/AwakeningSystem';
 import { CodeBullet, CodeBulletConfig } from '../entities/CodeBullet';
 import { Task } from '../entities/Task';
 import { DamagePopup } from '../ui/DamagePopup';
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
   private taskManager: TaskManager | null = null;
   private attackSystem: AttackSystem | null = null;
   private taskRewardSystem: TaskRewardSystem | null = null;
+  private awakeningSystem: AwakeningSystem | null = null;
   private stage: number = 1;
   
   // オート攻撃関連
@@ -38,6 +40,9 @@ export class GameScene extends Phaser.Scene {
   private dialogueText: Phaser.GameObjects.Text | null = null;
   private taskCountText: Phaser.GameObjects.Text | null = null;
   private rewardStatusText: Phaser.GameObjects.Text | null = null;
+  private tensionBar: Phaser.GameObjects.Graphics | null = null;
+  private tensionText: Phaser.GameObjects.Text | null = null;
+  private awakeningText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -92,6 +97,14 @@ export class GameScene extends Phaser.Scene {
     
     // タスク報酬システム
     this.taskRewardSystem = new TaskRewardSystem();
+    
+    // 覚醒モードシステム
+    this.awakeningSystem = new AwakeningSystem({
+      maxTension: 100,
+      baseGain: 5,
+      lowStressBonus: 1.5,
+      comboBonusRate: 0.1,
+    });
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
@@ -175,6 +188,28 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 10, y: 5 },
     }).setOrigin(0.5).setDepth(10);
     
+    // テンションゲージ
+    this.tensionBar = this.add.graphics();
+    this.tensionBar.setDepth(10);
+    
+    // テンションテキスト
+    this.tensionText = this.add.text(centerX, 190, 'テンション: 0%', {
+      fontSize: '16px',
+      color: '#ffd700',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(10);
+    
+    // 覚醒モードテキスト
+    this.awakeningText = this.add.text(centerX, 220, '', {
+      fontSize: '20px',
+      color: '#ff00ff',
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(10);
+    this.awakeningText.setAlpha(0.0);
+    
     this.updateUI();
   }
 
@@ -209,6 +244,40 @@ export class GameScene extends Phaser.Scene {
     
     // ストレステキスト
     this.stressText.setText(`ストレス: ${Math.floor(stress)}%`);
+    
+    // テンションゲージを描画
+    if (this.tensionBar && this.tensionText && this.awakeningText && this.awakeningSystem) {
+      const tensionLevel = this.awakeningSystem.getTensionLevel();
+      const tension = this.awakeningSystem.getTension();
+      
+      this.tensionBar.clear();
+      
+      // 背景
+      this.tensionBar.fillStyle(0x333333, 1.0);
+      this.tensionBar.fillRect(20, 50, 200, 15);
+      
+      // テンションゲージ（金色）
+      this.tensionBar.fillStyle(0xffd700, 1.0);
+      this.tensionBar.fillRect(20, 50, 200 * tensionLevel, 15);
+      
+      // テンションテキスト
+      this.tensionText.setText(`テンション: ${Math.floor(tension)}%`);
+      
+      // 覚醒モード表示
+      const awakening = this.awakeningSystem.getCurrentAwakening();
+      if (awakening.isActive && awakening.type) {
+        const typeNames = {
+          [AwakeningType.FOCUS]: '集中覚醒',
+          [AwakeningType.BURST]: '爆発覚醒',
+          [AwakeningType.CREATIVE]: '創造覚醒',
+        };
+        const seconds = Math.ceil(awakening.remainingTime / 1000);
+        this.awakeningText.setText(`${typeNames[awakening.type]} (${seconds}秒)`);
+        this.awakeningText.setAlpha(1.0);
+      } else {
+        this.awakeningText.setAlpha(0.0);
+      }
+    }
     
     // タスク数テキスト
     if (this.taskCountText && this.taskManager) {
@@ -293,7 +362,12 @@ export class GameScene extends Phaser.Scene {
     
     // コード品質の効果を考慮した間隔を取得
     const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
-    const interval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    let interval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    
+    // 集中覚醒の効果を考慮（攻撃速度2倍 = 間隔を半分に）
+    if (this.awakeningSystem?.getAwakeningType() === AwakeningType.FOCUS) {
+      interval *= 0.5;
+    }
     
     // 既存のタイマーを停止
     if (this.autoAttackTimer) {
@@ -305,7 +379,7 @@ export class GameScene extends Phaser.Scene {
       delay: interval,
       callback: () => {
         this.performAutoAttack();
-        // コード品質が変わった場合に間隔を再計算
+        // コード品質や覚醒モードが変わった場合に間隔を再計算
         this.restartAutoAttackIfNeeded();
       },
       loop: true,
@@ -313,7 +387,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * オート攻撃を再開（コード品質が変わった場合）
+   * オート攻撃を再開（コード品質や覚醒モードが変わった場合）
    */
   private restartAutoAttackIfNeeded(): void {
     if (!this.attackSystem || !this.taskRewardSystem) {
@@ -321,7 +395,12 @@ export class GameScene extends Phaser.Scene {
     }
     
     const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
-    const currentInterval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    let currentInterval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    
+    // 集中覚醒の効果を考慮
+    if (this.awakeningSystem?.getAwakeningType() === AwakeningType.FOCUS) {
+      currentInterval *= 0.5;
+    }
     
     // タイマーの間隔が変わった場合は再起動
     if (this.autoAttackTimer && this.autoAttackTimer.delay !== currentInterval) {
@@ -358,8 +437,16 @@ export class GameScene extends Phaser.Scene {
       // 仕様理解度の倍率を取得
       const featureMultiplier = this.taskRewardSystem.getFeatureAttackMultiplier();
       
+      // 集中覚醒の倍率を取得
+      const awakeningMultiplier = this.getAwakeningAttackMultiplier();
+      
       // ダメージを計算
-      const damage = this.attackSystem.calculateDamage(this.reia, this.combo, true, featureMultiplier);
+      const damage = this.attackSystem.calculateDamage(
+        this.reia,
+        this.combo,
+        true,
+        featureMultiplier * awakeningMultiplier
+      );
       
       // 弾丸を発射
       this.fireBullet(this.reia.x, this.reia.y, nearestTask.x, nearestTask.y, damage);
@@ -380,11 +467,60 @@ export class GameScene extends Phaser.Scene {
     // 仕様理解度の倍率を取得
     const featureMultiplier = this.taskRewardSystem?.getFeatureAttackMultiplier() || 1.0;
     
-    // ダメージを計算
-    const damage = this.attackSystem.calculateDamage(this.reia, this.combo, false, featureMultiplier);
+    // 集中覚醒の倍率を取得（攻撃力+50%）
+    const awakeningMultiplier = this.getAwakeningAttackMultiplier();
     
-    // 弾丸を発射
-    this.fireBullet(this.reia.x, this.reia.y, x, y, damage);
+    // ダメージを計算
+    const damage = this.attackSystem.calculateDamage(
+      this.reia,
+      this.combo,
+      false,
+      featureMultiplier * awakeningMultiplier
+    );
+    
+    // 創造覚醒中は複数のタスクに同時ダメージ
+    if (this.awakeningSystem?.getAwakeningType() === AwakeningType.CREATIVE) {
+      this.fireCreativeBullets(x, y, damage);
+    } else {
+      // 通常の弾丸を発射
+      this.fireBullet(this.reia.x, this.reia.y, x, y, damage);
+    }
+  }
+
+  /**
+   * 創造覚醒時の複数弾丸発射
+   */
+  private fireCreativeBullets(_targetX: number, _targetY: number, damage: DecimalWrapper): void {
+    if (!this.taskManager || !this.reia) {
+      return;
+    }
+    
+    const tasks = this.taskManager.getTasks();
+    
+    // 最大5個のタスクに同時ダメージ
+    const maxTargets = Math.min(5, tasks.length);
+    
+    for (let i = 0; i < maxTargets; i++) {
+      const task = tasks[i];
+      this.fireBullet(this.reia.x, this.reia.y, task.x, task.y, damage);
+    }
+  }
+
+  /**
+   * 覚醒モードの攻撃力倍率を取得
+   */
+  private getAwakeningAttackMultiplier(): number {
+    if (!this.awakeningSystem) {
+      return 1.0;
+    }
+    
+    const awakeningType = this.awakeningSystem.getAwakeningType();
+    
+    if (awakeningType === AwakeningType.FOCUS) {
+      return 1.5; // 攻撃力+50%
+    }
+    
+    return 1.0;
   }
 
   /**
@@ -463,6 +599,16 @@ export class GameScene extends Phaser.Scene {
     // タスク報酬システムを更新（仕様理解度の残り時間など）
     if (this.taskRewardSystem) {
       this.taskRewardSystem.update(delta);
+    }
+    
+    // 覚醒モードシステムを更新
+    if (this.awakeningSystem) {
+      this.awakeningSystem.update(delta);
+      
+      // 覚醒モードが終了した場合、オート攻撃を再開
+      if (!this.awakeningSystem.isAwakeningActive() && this.autoAttackTimer) {
+        this.restartAutoAttackIfNeeded();
+      }
     }
     
     // れいあの状態を更新
@@ -549,7 +695,7 @@ export class GameScene extends Phaser.Scene {
    * タスクを倒した時の処理
    */
   private onTaskDefeated(task: Task): void {
-    if (!this.taskManager || !this.stressSystem || !this.combo || !this.taskRewardSystem) {
+    if (!this.taskManager || !this.stressSystem || !this.combo || !this.taskRewardSystem || !this.awakeningSystem) {
       return;
     }
     
@@ -562,11 +708,121 @@ export class GameScene extends Phaser.Scene {
     // タスク報酬を処理
     this.taskRewardSystem.onTaskDefeated(task.getType(), 0);
     
+    // テンションゲージを増加
+    const stressLevel = this.stressSystem.getStressLevel();
+    const comboCount = this.combo.getComboCount();
+    this.awakeningSystem.onTaskDefeated(stressLevel, comboCount);
+    
+    // 覚醒モードをチェック
+    this.checkAwakenings(task);
+    
     // コード品質が変わった場合はオート攻撃を再開
     this.restartAutoAttackIfNeeded();
     
     // タスクを削除
     this.taskManager.removeTask(task);
+  }
+
+  /**
+   * 覚醒モードをチェック
+   */
+  private checkAwakenings(task: Task): void {
+    if (!this.awakeningSystem || !this.stressSystem || !this.combo) {
+      return;
+    }
+    
+    const comboCount = this.combo.getComboCount();
+    const stressLevel = this.stressSystem.getStressLevel();
+    
+    // 集中覚醒をチェック（コンボ型）
+    if (this.awakeningSystem.checkFocusAwakening(comboCount)) {
+      this.activateFocusAwakening();
+    }
+    
+    // 爆発覚醒をチェック（ストレス型）
+    if (this.awakeningSystem.checkBurstAwakening(stressLevel)) {
+      this.activateBurstAwakening();
+    }
+    
+    // 創造覚醒をチェック（戦略型）
+    if (this.awakeningSystem.checkCreativeAwakening(task.getType())) {
+      this.activateCreativeAwakening();
+    }
+  }
+
+  /**
+   * 集中覚醒を発動
+   */
+  private activateFocusAwakening(): void {
+    if (!this.reia) {
+      return;
+    }
+    
+    // れいあの覚醒アニメーション
+    this.reia.playAwakeningAnimation('focus');
+    
+    // セリフを表示
+    if (this.dialogueText) {
+      this.dialogueText.setText('集中できる！');
+      this.dialogueText.setAlpha(1.0);
+    }
+    
+    // オート攻撃間隔を調整（攻撃速度2倍 = 間隔を半分に）
+    this.restartAutoAttackIfNeeded();
+  }
+
+  /**
+   * 爆発覚醒を発動
+   */
+  private activateBurstAwakening(): void {
+    if (!this.taskManager || !this.stressSystem || !this.reia) {
+      return;
+    }
+    
+    // れいあの覚醒アニメーション
+    this.reia.playAwakeningAnimation('burst');
+    
+    // セリフを表示
+    if (this.dialogueText) {
+      this.dialogueText.setText('もう無理...でもやる！');
+      this.dialogueText.setAlpha(1.0);
+    }
+    
+    // 画面内のタスクを一気にクリア
+    const tasks = this.taskManager.getTasks();
+    for (const task of tasks) {
+      // ダメージポップアップを表示
+      this.showDamagePopup(task.x, task.y, new DecimalWrapper(999999));
+      
+      // タスクを削除
+      this.taskManager.removeTask(task);
+    }
+    
+    // ストレスを0%にリセット
+    this.stressSystem.reset();
+    
+    // コンボを追加（爆発覚醒で倒した分）
+    if (this.combo) {
+      this.combo.addCombo(tasks.length);
+    }
+  }
+
+  /**
+   * 創造覚醒を発動
+   */
+  private activateCreativeAwakening(): void {
+    if (!this.reia) {
+      return;
+    }
+    
+    // れいあの覚醒アニメーション
+    this.reia.playAwakeningAnimation('creative');
+    
+    // セリフを表示
+    if (this.dialogueText) {
+      this.dialogueText.setText('閃いた！');
+      this.dialogueText.setAlpha(1.0);
+    }
   }
 
   /**
