@@ -65,6 +65,22 @@ export class TaskManager {
   }
 
   /**
+   * 生成間隔を更新（デバッグ用）
+   */
+  updateSpawnInterval(newInterval: number): void {
+    this.config.spawnInterval = newInterval;
+    
+    // 既存のタイマーを停止して再起動
+    if (this.spawnTimer) {
+      this.spawnTimer.destroy();
+      this.spawnTimer = null;
+    }
+    
+    // 新しい間隔で再起動
+    this.start();
+  }
+
+  /**
    * タスクを生成
    */
   private spawnTask(): void {

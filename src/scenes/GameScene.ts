@@ -12,6 +12,8 @@ import { TaskManager, TaskManagerConfig } from '../systems/TaskManager';
 import { AttackSystem, AttackSystemConfig } from '../systems/AttackSystem';
 import { TaskRewardSystem } from '../systems/TaskRewardSystem';
 import { AwakeningSystem, AwakeningType } from '../systems/AwakeningSystem';
+import { DebugSystem } from '../systems/DebugSystem';
+import { DebugPanel } from '../ui/DebugPanel';
 import { CodeBullet, CodeBulletConfig } from '../entities/CodeBullet';
 import { Task } from '../entities/Task';
 import { DamagePopup } from '../ui/DamagePopup';
@@ -25,6 +27,8 @@ export class GameScene extends Phaser.Scene {
   private attackSystem: AttackSystem | null = null;
   private taskRewardSystem: TaskRewardSystem | null = null;
   private awakeningSystem: AwakeningSystem | null = null;
+  private debugSystem: DebugSystem | null = null;
+  private debugPanel: DebugPanel | null = null;
   private stage: number = 1;
   
   // オート攻撃関連
@@ -88,9 +92,12 @@ export class GameScene extends Phaser.Scene {
     this.combo = new Combo(0);
     
     // 攻撃システム
+    // デバッグ設定があればそれを使用、なければデフォルト値
+    const autoAttackInterval = this.debugSystem?.getAutoAttackInterval() || 1000;
+    
     const attackConfig: AttackSystemConfig = {
       baseDamage: 10,
-      autoAttackInterval: 1000, // 1秒ごと
+      autoAttackInterval: autoAttackInterval,
       autoAttackDamageRatio: 0.5, // タップ攻撃の50%
     };
     this.attackSystem = new AttackSystem(attackConfig);
@@ -105,6 +112,15 @@ export class GameScene extends Phaser.Scene {
       lowStressBonus: 1.5,
       comboBonusRate: 0.1,
     });
+    
+    // デバッグシステム
+    this.debugSystem = new DebugSystem();
+    // 開発環境ではデバッグモードを有効化（本番環境ではfalseに設定）
+    this.debugSystem.setEnabled(true);
+    
+    // デバッグパネル
+    this.debugPanel = new DebugPanel(this, this.debugSystem);
+    this.debugPanel.create();
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
@@ -134,8 +150,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     
+    // デバッグ設定があればそれを使用、なければデフォルト値
+    const spawnInterval = this.debugSystem?.getTaskSpawnInterval() || 3000;
+    
     const config: TaskManagerConfig = {
-      spawnInterval: 3000, // 3秒ごとに生成
+      spawnInterval: spawnInterval,
       maxTasks: 10,         // 最大10個
       spawnRadius: 300,     // れいあから300ピクセル離れた位置
       stage: this.stage,
@@ -360,9 +379,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     
+    // デバッグ設定の間隔を取得（デバッグ設定が優先）
+    const debugInterval = this.debugSystem?.getAutoAttackInterval();
+    const baseInterval = debugInterval || this.attackSystem.getAutoAttackInterval();
+    
     // コード品質の効果を考慮した間隔を取得
     const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
-    let interval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    let interval = baseInterval * codeQualityMultiplier;
     
     // 集中覚醒の効果を考慮（攻撃速度2倍 = 間隔を半分に）
     if (this.awakeningSystem?.getAwakeningType() === AwakeningType.FOCUS) {
@@ -394,8 +417,12 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     
+    // デバッグ設定の間隔を取得（デバッグ設定が優先）
+    const debugInterval = this.debugSystem?.getAutoAttackInterval();
+    const baseInterval = debugInterval || this.attackSystem.getAutoAttackInterval();
+    
     const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
-    let currentInterval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    let currentInterval = baseInterval * codeQualityMultiplier;
     
     // 集中覚醒の効果を考慮
     if (this.awakeningSystem?.getAwakeningType() === AwakeningType.FOCUS) {
@@ -440,12 +467,15 @@ export class GameScene extends Phaser.Scene {
       // 集中覚醒の倍率を取得
       const awakeningMultiplier = this.getAwakeningAttackMultiplier();
       
+      // デバッグ設定の攻撃力倍率を取得
+      const debugMultiplier = this.debugSystem?.getAttackPowerMultiplier() || 1.0;
+      
       // ダメージを計算
       const damage = this.attackSystem.calculateDamage(
         this.reia,
         this.combo,
         true,
-        featureMultiplier * awakeningMultiplier
+        featureMultiplier * awakeningMultiplier * debugMultiplier
       );
       
       // 弾丸を発射
@@ -470,12 +500,15 @@ export class GameScene extends Phaser.Scene {
     // 集中覚醒の倍率を取得（攻撃力+50%）
     const awakeningMultiplier = this.getAwakeningAttackMultiplier();
     
+    // デバッグ設定の攻撃力倍率を取得
+    const debugMultiplier = this.debugSystem?.getAttackPowerMultiplier() || 1.0;
+    
     // ダメージを計算
     const damage = this.attackSystem.calculateDamage(
       this.reia,
       this.combo,
       false,
-      featureMultiplier * awakeningMultiplier
+      featureMultiplier * awakeningMultiplier * debugMultiplier
     );
     
     // 創造覚醒中は複数のタスクに同時ダメージ
@@ -611,11 +644,37 @@ export class GameScene extends Phaser.Scene {
       }
     }
     
+    // デバッグパネルを更新
+    if (this.debugPanel) {
+      this.debugPanel.update(() => {
+        // デバッグ設定が変更された時の処理
+        this.onDebugConfigChanged();
+      });
+    }
+    
     // れいあの状態を更新
     this.updateReiaState();
     
     // UIを更新
     this.updateUI();
+  }
+
+  /**
+   * デバッグ設定が変更された時の処理
+   */
+  private onDebugConfigChanged(): void {
+    if (!this.debugSystem) {
+      return;
+    }
+    
+    // タスク生成間隔が変更された場合
+    if (this.taskManager) {
+      const newInterval = this.debugSystem.getTaskSpawnInterval();
+      this.taskManager.updateSpawnInterval(newInterval);
+    }
+    
+    // オート攻撃間隔が変更された場合
+    this.restartAutoAttackIfNeeded();
   }
 
   /**
