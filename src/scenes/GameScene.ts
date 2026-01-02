@@ -8,16 +8,20 @@ import Phaser from 'phaser';
 import { Reia, ReiaConfig } from '../entities/Reia';
 import { StressSystem } from '../systems/StressSystem';
 import { Combo } from '../systems/Combo';
+import { TaskManager, TaskManagerConfig } from '../systems/TaskManager';
 
 export class GameScene extends Phaser.Scene {
   private reia: Reia | null = null;
   private stressSystem: StressSystem | null = null;
   private combo: Combo | null = null;
+  private taskManager: TaskManager | null = null;
+  private stage: number = 1;
   
   // UI要素
   private stressBar: Phaser.GameObjects.Graphics | null = null;
   private stressText: Phaser.GameObjects.Text | null = null;
   private dialogueText: Phaser.GameObjects.Text | null = null;
+  private taskCountText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -35,6 +39,9 @@ export class GameScene extends Phaser.Scene {
     
     // れいあキャラクターを初期化
     this.initializeReia(centerX, centerY);
+    
+    // タスクマネージャーを初期化
+    this.initializeTaskManager();
     
     // UIを初期化
     this.initializeUI();
@@ -77,6 +84,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
+   * タスクマネージャーを初期化
+   */
+  private initializeTaskManager(): void {
+    if (!this.reia) {
+      return;
+    }
+    
+    const config: TaskManagerConfig = {
+      spawnInterval: 3000, // 3秒ごとに生成
+      maxTasks: 10,         // 最大10個
+      spawnRadius: 300,     // れいあから300ピクセル離れた位置
+      stage: this.stage,
+    };
+    
+    this.taskManager = new TaskManager(this, this.reia, config);
+    this.taskManager.start();
+  }
+
+  /**
    * UIを初期化
    */
   private initializeUI(): void {
@@ -100,6 +126,14 @@ export class GameScene extends Phaser.Scene {
       color: '#ffd700',
       fontStyle: 'bold',
       backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(10);
+    
+    // タスク数テキスト
+    this.taskCountText = this.add.text(centerX, 130, 'タスク: 0', {
+      fontSize: '16px',
+      color: '#ffffff',
+      backgroundColor: 'rgba(0,0,0,0.5)',
       padding: { x: 10, y: 5 },
     }).setOrigin(0.5).setDepth(10);
     
@@ -137,6 +171,12 @@ export class GameScene extends Phaser.Scene {
     
     // ストレステキスト
     this.stressText.setText(`ストレス: ${Math.floor(stress)}%`);
+    
+    // タスク数テキスト
+    if (this.taskCountText && this.taskManager) {
+      const taskCount = this.taskManager.getTaskCount();
+      this.taskCountText.setText(`タスク: ${taskCount}`);
+    }
     
     // セリフ
     const dialogue = this.reia.getDialogue();
@@ -179,7 +219,7 @@ export class GameScene extends Phaser.Scene {
     this.reia.playTapAnimation();
     
     // タスクを倒した想定（プロトタイプ）
-    // TODO: 実際のタスクシステムと連携
+    // TODO: Phase 3で実際の攻撃システムと連携
     if (this.stressSystem && this.combo) {
       this.combo.addCombo(1);
       this.stressSystem.decreaseStress(this.combo.getComboCount());
@@ -191,9 +231,33 @@ export class GameScene extends Phaser.Scene {
   /**
    * 更新処理
    */
-  update(_time: number, _delta: number): void {
-    // ストレスが自然に増加する（プロトタイプ: テスト用）
-    // TODO: 実際のタスクシステムと連携して、タスクが近づいた時にストレスを増加させる
+  update(_time: number, delta: number): void {
+    // タスクマネージャーを更新
+    if (this.taskManager) {
+      this.taskManager.update(delta);
+      
+      // タスクが近づいた時にストレスを増加させる
+      const tasks = this.taskManager.getTasks();
+      if (this.stressSystem && this.reia) {
+        for (const task of tasks) {
+          const distance = task.getDistanceToTarget();
+          if (distance < 200) { // 200ピクセル以内
+            this.stressSystem.increaseStress(distance, task.getType());
+          }
+        }
+      }
+      
+      // れいあに触れたタスクをチェック（ゲームオーバー）
+      for (const task of tasks) {
+        if (task.isTouchingTarget()) {
+          // TODO: ゲームオーバー処理（Phase 4で実装）
+          console.log('Game Over: タスクがれいあに触れました');
+        }
+      }
+    }
+    
+    // れいあの状態を更新
+    this.updateReiaState();
     
     // UIを更新
     this.updateUI();
