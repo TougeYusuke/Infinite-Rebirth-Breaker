@@ -202,75 +202,93 @@ export class GameScene extends Phaser.Scene {
    * UIを初期化
    */
   private initializeUI(): void {
-    const centerX = this.cameras.main.width / 2;
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const safeAreaTop = 40; // 上部のセーフエリア
     
-    // ストレスバー
-    this.stressBar = this.add.graphics();
-    this.stressBar.setDepth(10);
+    // --- ヘッダー領域 ---
     
-    // ストレステキスト
-    this.stressText = this.add.text(centerX, 50, 'ストレス: 0%', {
-      fontSize: '20px',
+    // Wave情報（左上）
+    this.waveText = this.add.text(20, safeAreaTop, 'Wave: 1', {
+      fontSize: '24px',
       color: '#ffffff',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
-    
-    // セリフテキスト
-    this.dialogueText = this.add.text(centerX, 100, '', {
-      fontSize: '18px',
-      color: '#ffd700',
       fontStyle: 'bold',
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setDepth(20);
     
-    // タスク数テキスト
-    this.taskCountText = this.add.text(centerX, 130, 'タスク: 0', {
-      fontSize: '16px',
-      color: '#ffffff',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
+    // タスク数（Wave情報の下）
+    this.taskCountText = this.add.text(20, safeAreaTop + 30, 'タスク: 0', {
+      fontSize: '18px',
+      color: '#cccccc',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setDepth(20);
     
-    // 報酬ステータステキスト
-    this.rewardStatusText = this.add.text(centerX, 160, '', {
+    // --- ストレスバー（画面上部中央） ---
+    
+    // ストレスバー背景（updateUIで描画）
+    this.stressBar = this.add.graphics();
+    this.stressBar.setDepth(20);
+    
+    // ストレスアイコンとテキスト
+    const barY = safeAreaTop + 5;
+    
+    this.stressText = this.add.text(width / 2, barY - 10, 'ストレス', {
       fontSize: '14px',
-      color: '#4ecdc4',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5, 1).setDepth(20);
     
-    // テンションゲージ
+    // --- フッター領域 ---
+    
+    // 報酬ステータス（画面下部）
+    this.rewardStatusText = this.add.text(width / 2, height - 80, '', {
+      fontSize: '14px',
+      color: '#aaaaaa',
+      align: 'center',
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(20);
+    
+    // テンションゲージ（画面下部）
     this.tensionBar = this.add.graphics();
-    this.tensionBar.setDepth(10);
+    this.tensionBar.setDepth(20);
     
     // テンションテキスト
-    this.tensionText = this.add.text(centerX, 190, 'テンション: 0%', {
+    this.tensionText = this.add.text(width / 2, height - 40, 'テンション: 0%', {
       fontSize: '16px',
       color: '#ffd700',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
-    
-    // 覚醒モードテキスト
-    this.awakeningText = this.add.text(centerX, 220, '', {
-      fontSize: '20px',
-      color: '#ff00ff',
       fontStyle: 'bold',
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
-    this.awakeningText.setAlpha(0.0);
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(21);
     
-    // Wave情報テキスト
-    this.waveText = this.add.text(centerX, 250, 'Wave: 1', {
-      fontSize: '18px',
+    // --- その他 ---
+    
+    // セリフ（れいあの頭上）
+    this.dialogueText = this.add.text(width / 2, height / 2 - 80, '', {
+      fontSize: '20px',
       color: '#ffffff',
       fontStyle: 'bold',
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      stroke: '#000000',
+      strokeThickness: 4,
+      backgroundColor: 'rgba(0,0,0,0.5)',
       padding: { x: 10, y: 5 },
-    }).setOrigin(0.5).setDepth(10);
+    }).setOrigin(0.5).setDepth(15);
+    this.dialogueText.setAlpha(0); // 最初は非表示
+    
+    // 覚醒モードテキスト（画面中央上部）
+    this.awakeningText = this.add.text(width / 2, height / 2 - 150, '', {
+      fontSize: '32px',
+      color: '#ff00ff',
+      fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 6,
+      shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, stroke: true, fill: true },
+    }).setOrigin(0.5).setDepth(30);
+    this.awakeningText.setAlpha(0.0);
     
     this.updateUI();
   }
@@ -283,15 +301,24 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const safeAreaTop = 40;
+    
     const stressLevel = this.stressSystem.getStressLevel();
     const stress = this.stressSystem.getStress();
     
-    // ストレスバーを描画
+    // --- ストレスバー更新 ---
+    const barWidth = width * 0.6; // 画面幅の60%
+    const barHeight = 15;
+    const barX = (width - barWidth) / 2;
+    const barY = safeAreaTop + 5;
+    
     this.stressBar.clear();
     
-    // 背景
-    this.stressBar.fillStyle(0x333333, 1.0);
-    this.stressBar.fillRect(20, 20, 200, 20);
+    // 背景（暗いグレー）
+    this.stressBar.fillStyle(0x333333, 0.8);
+    this.stressBar.fillRoundedRect(barX, barY, barWidth, barHeight, 5);
     
     // ストレスバー（色はストレスレベルに応じて変化）
     let barColor = 0x00ff00; // 緑（低）
@@ -301,26 +328,48 @@ export class GameScene extends Phaser.Scene {
       barColor = 0xffaa00; // オレンジ（中）
     }
     
-    this.stressBar.fillStyle(barColor, 1.0);
-    this.stressBar.fillRect(20, 20, 200 * stressLevel, 20);
+    if (stressLevel > 0) {
+      this.stressBar.fillStyle(barColor, 1.0);
+      this.stressBar.fillRoundedRect(barX, barY, barWidth * stressLevel, barHeight, 5);
+    }
+    
+    // 枠線
+    this.stressBar.lineStyle(2, 0xffffff, 0.5);
+    this.stressBar.strokeRoundedRect(barX, barY, barWidth, barHeight, 5);
     
     // ストレステキスト
     this.stressText.setText(`ストレス: ${Math.floor(stress)}%`);
+    this.stressText.setColor(stressLevel > 0.7 ? '#ff6b6b' : '#ffffff');
     
-    // テンションゲージを描画
+    // --- テンションゲージ更新 ---
     if (this.tensionBar && this.tensionText && this.awakeningText && this.awakeningSystem) {
       const tensionLevel = this.awakeningSystem.getTensionLevel();
       const tension = this.awakeningSystem.getTension();
       
+      const tBarWidth = width * 0.8;
+      const tBarHeight = 20;
+      const tBarX = (width - tBarWidth) / 2;
+      const tBarY = height - 60;
+      
       this.tensionBar.clear();
       
       // 背景
-      this.tensionBar.fillStyle(0x333333, 1.0);
-      this.tensionBar.fillRect(20, 50, 200, 15);
+      this.tensionBar.fillStyle(0x333333, 0.8);
+      this.tensionBar.fillRoundedRect(tBarX, tBarY, tBarWidth, tBarHeight, 10);
       
       // テンションゲージ（金色）
-      this.tensionBar.fillStyle(0xffd700, 1.0);
-      this.tensionBar.fillRect(20, 50, 200 * tensionLevel, 15);
+      if (tensionLevel > 0) {
+        this.tensionBar.fillStyle(0xffd700, 1.0);
+        this.tensionBar.fillRoundedRect(tBarX, tBarY, tBarWidth * tensionLevel, tBarHeight, 10);
+        
+        // 光沢エフェクト
+        this.tensionBar.fillStyle(0xffffff, 0.3);
+        this.tensionBar.fillRoundedRect(tBarX, tBarY, tBarWidth * tensionLevel, tBarHeight / 2, { tl: 10, tr: 10, bl: 0, br: 0 });
+      }
+      
+      // 枠線
+      this.tensionBar.lineStyle(2, 0xffd700, 0.8);
+      this.tensionBar.strokeRoundedRect(tBarX, tBarY, tBarWidth, tBarHeight, 10);
       
       // テンションテキスト
       this.tensionText.setText(`テンション: ${Math.floor(tension)}%`);
@@ -333,74 +382,56 @@ export class GameScene extends Phaser.Scene {
           [AwakeningType.BURST]: '爆発覚醒',
           [AwakeningType.CREATIVE]: '創造覚醒',
         };
+        
+        const colors = {
+          [AwakeningType.FOCUS]: '#4ecdc4',
+          [AwakeningType.BURST]: '#ff6b6b',
+          [AwakeningType.CREATIVE]: '#ffd93d',
+        };
+        
         const seconds = Math.ceil(awakening.remainingTime / 1000);
-        this.awakeningText.setText(`${typeNames[awakening.type]} (${seconds}秒)`);
+        this.awakeningText.setText(`${typeNames[awakening.type]}\n${seconds}秒`);
+        this.awakeningText.setColor(colors[awakening.type]);
         this.awakeningText.setAlpha(1.0);
+        
+        // 点滅エフェクト
+        if (!this.tweens.isTweening(this.awakeningText)) {
+          this.tweens.add({
+            targets: this.awakeningText,
+            alpha: 0.5,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+          });
+        }
       } else {
         this.awakeningText.setAlpha(0.0);
+        this.tweens.killTweensOf(this.awakeningText);
       }
     }
     
-    // タスク数テキスト
+    // --- タスク数更新 ---
     if (this.taskCountText && this.taskManager) {
       const taskCount = this.taskManager.getTaskCount();
       this.taskCountText.setText(`タスク: ${taskCount}`);
     }
     
-    // Wave情報テキスト
+    // --- Wave情報更新 ---
     if (this.waveText && this.waveSystem) {
       const currentWave = this.waveSystem.getCurrentWave();
       const remainingTasks = this.waveSystem.getRemainingTasksInWave();
       this.waveText.setText(`Wave: ${currentWave} (残り: ${remainingTasks})`);
     }
     
-    // セリフ
-    const dialogue = this.reia.getDialogue();
-    if (this.dialogueText) {
-      if (dialogue) {
-        this.dialogueText.setText(dialogue);
-        this.dialogueText.setAlpha(1.0);
-      } else {
-        this.dialogueText.setAlpha(0.0);
-      }
-    }
-    
-    // 報酬ステータスを更新
+    // --- 報酬ステータス更新 ---
     if (this.rewardStatusText && this.taskRewardSystem) {
-      const statusLines: string[] = [];
-      
-      // 仕様理解度
-      const featureTime = this.taskRewardSystem.getFeatureRemainingTime();
-      if (featureTime > 0) {
-        const seconds = Math.ceil(featureTime / 1000);
-        const multiplier = this.taskRewardSystem.getFeatureAttackMultiplier();
-        statusLines.push(`仕様理解度: ${(multiplier * 100).toFixed(0)}% (${seconds}秒)`);
-      }
-      
-      // コード品質
-      const codeQualityLevel = this.taskRewardSystem.getCodeQualityLevel();
-      if (codeQualityLevel > 0) {
-        statusLines.push(`コード品質: Lv.${codeQualityLevel}`);
-      }
-      
-      // 緊急対応力
-      const emergencyLevel = this.taskRewardSystem.getEmergencyResponseLevel();
-      if (emergencyLevel > 0) {
-        statusLines.push(`緊急対応力: Lv.${emergencyLevel}`);
-      }
-      
-      // デバッグポイント
       const debugPoints = this.taskRewardSystem.getDebugPoints();
-      if (debugPoints > 0) {
-        statusLines.push(`デバッグポイント: ${debugPoints}`);
-      }
+      const featureLevel = Math.floor(this.taskRewardSystem.getFeatureAttackMultiplier() * 10) / 10;
       
-      if (statusLines.length > 0) {
-        this.rewardStatusText.setText(statusLines.join(' | '));
-        this.rewardStatusText.setAlpha(1.0);
-      } else {
-        this.rewardStatusText.setAlpha(0.0);
-      }
+      // コンパクトに表示
+      this.rewardStatusText.setText(
+        `デバッグPt: ${debugPoints} | 仕様理解: x${featureLevel}`
+      );
     }
   }
 
@@ -1088,4 +1119,3 @@ export class GameScene extends Phaser.Scene {
     }
   }
 }
-
