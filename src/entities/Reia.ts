@@ -47,9 +47,13 @@ export class Reia extends Phaser.GameObjects.Container {
   private comboCount: number = 0;
   private hp: number = 100;
   private maxHp: number = 100;
+  private baseY: number = 0; // 元のY座標（アニメーション用）
 
   constructor(scene: Phaser.Scene, config: ReiaConfig) {
     super(scene, config.x, config.y);
+    
+    // 元のY座標を保存
+    this.baseY = config.y;
     
     // シーンに追加
     scene.add.existing(this);
@@ -88,7 +92,7 @@ export class Reia extends Phaser.GameObjects.Container {
    * 待機アニメーション
    */
   playIdleAnimation(): void {
-    // 時々首をかしげるアニメーション
+    // 時々首をかしげるアニメーション（角度のみ、位置は変更しない）
     this.scene.tweens.add({
       targets: this,
       angle: -5,
@@ -103,13 +107,23 @@ export class Reia extends Phaser.GameObjects.Container {
    * タップ時アニメーション
    */
   playTapAnimation(): void {
+    // 既存のアニメーションを停止（連打対策）
+    this.scene.tweens.killTweensOf(this);
+    
+    // 元の位置に戻す（念のため）
+    this.y = this.baseY;
+    
     // キーボードを叩くアニメーション（上下に少し動く）
     this.scene.tweens.add({
       targets: this,
-      y: this.y - 10,
+      y: this.baseY - 10, // 元の位置から-10
       duration: 100,
       yoyo: true,
       ease: 'Power2',
+      onComplete: () => {
+        // アニメーション完了後、確実に元の位置に戻す
+        this.y = this.baseY;
+      },
     });
   }
 
