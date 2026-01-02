@@ -23,6 +23,7 @@ import { Rebirth } from '../systems/Rebirth';
 import { GameOverScene, GameOverInfo } from './GameOverScene';
 import { AwakeningEffect } from '../effects/AwakeningEffect';
 import { ScreenClearEffect } from '../effects/ScreenClearEffect';
+import { loadSaveData, saveSaveData } from '../utils/Storage';
 
 export class GameScene extends Phaser.Scene {
   private reia: Reia | null = null;
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
   private totalDamage: DecimalWrapper = new DecimalWrapper(0);
   private isGameOver: boolean = false;
   private startWave: number = 1; // 開始Wave数（Quick Skip用）
+  private autoSaveTimer: Phaser.Time.TimerEvent | null = null; // 自動セーブタイマー
   
   // オート攻撃関連
   private autoAttackTimer: Phaser.Time.TimerEvent | null = null;
@@ -157,6 +159,41 @@ export class GameScene extends Phaser.Scene {
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
+    
+    // 自動セーブタイマーを開始（30秒ごと）
+    this.startAutoSave();
+  }
+
+  /**
+   * 自動セーブを開始
+   */
+  private startAutoSave(): void {
+    // 既存のタイマーを停止
+    if (this.autoSaveTimer) {
+      this.autoSaveTimer.destroy();
+    }
+    
+    // 30秒ごとに自動セーブ
+    this.autoSaveTimer = this.time.addEvent({
+      delay: 30000, // 30秒
+      callback: () => {
+        this.performAutoSave();
+      },
+      loop: true,
+    });
+  }
+
+  /**
+   * 自動セーブを実行
+   */
+  private performAutoSave(): void {
+    if (!this.waveSystem) {
+      return;
+    }
+    
+    // 現在のゲーム状態をセーブ（進行中のWave数などは保存しないが、転生石などは保存済み）
+    const saveData = loadSaveData();
+    saveSaveData(saveData, false); // 自動セーブ（間隔チェックあり）
   }
 
   /**

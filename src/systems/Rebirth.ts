@@ -48,7 +48,7 @@ export class Rebirth {
       maxStage: Math.max(saveData.maxStage, stage),
     };
     
-    saveSaveData(updatedSaveData);
+    saveSaveData(updatedSaveData, true); // 強制保存（重要イベント）
     
     return stones;
   }
@@ -88,7 +88,7 @@ export class Rebirth {
       rebirthStones: newStones.toString(),
     };
     
-    saveSaveData(updatedSaveData);
+    saveSaveData(updatedSaveData, true); // 強制保存（重要イベント）
     
     return true;
   }

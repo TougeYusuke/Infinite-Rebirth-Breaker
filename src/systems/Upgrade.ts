@@ -93,7 +93,7 @@ export class Upgrade {
       attackLevel: saveData.attackLevel + 1,
     };
     
-    saveSaveData(updatedSaveData);
+    saveSaveData(updatedSaveData, true); // 強制保存（重要イベント）
     
     return true;
   }
