@@ -157,12 +157,50 @@ game UI style
 
 ---
 
-## 使用するAIツール推奨
+## 使用するAIツール推奨（無料）
 
-1. **Midjourney**: 高品質なキャラクターデザイン
-2. **DALL-E 3**: 詳細な指示に従いやすい
-3. **Stable Diffusion**: オープンソース、カスタマイズ可能
-4. **Leonardo.ai**: ゲームアセット生成に特化
+### 完全無料ツール
+
+1. **Bing Image Creator**（Microsoft）
+   - URL: https://www.bing.com/images/create
+   - DALL-E 3ベース、高品質
+   - 無料、登録不要（Microsoftアカウント推奨）
+   - 1日あたりの生成数に制限あり（通常15-100枚程度）
+   - **推奨度: ⭐⭐⭐⭐⭐**
+
+2. **Stable Diffusion（Hugging Face Spaces）**
+   - URL: https://huggingface.co/spaces
+   - 完全無料、オープンソース
+   - ローカル実行も可能（GPU必要）
+   - カスタマイズ可能
+   - **推奨度: ⭐⭐⭐⭐**
+
+3. **Craiyon**（旧DALL-E mini）
+   - URL: https://www.craiyon.com/
+   - 完全無料、登録不要
+   - 品質は中程度だが、手軽に使える
+   - **推奨度: ⭐⭐⭐**
+
+### 無料プランあり
+
+4. **Leonardo.ai**
+   - URL: https://leonardo.ai/
+   - 無料プラン: 1日150枚程度
+   - ゲームアセット生成に特化
+   - 高品質
+   - **推奨度: ⭐⭐⭐⭐⭐**
+
+5. **Playground AI**
+   - URL: https://playgroundai.com/
+   - 無料プラン: 1日500枚程度
+   - Stable Diffusionベース
+   - **推奨度: ⭐⭐⭐⭐**
+
+### 推奨ワークフロー
+
+1. **キャラクターデザイン**: Bing Image Creator または Leonardo.ai（無料プラン）
+2. **UI要素・エフェクト**: Stable Diffusion（Hugging Face Spaces）
+3. **バリエーション生成**: Playground AI（無料プラン）
 
 ---
 
