@@ -88,7 +88,7 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   playIdleAnimation(): void {
     if (this.sprite) {
-      this.sprite.setTexture('reia_normal');
+      this.changeTexture('reia_normal');
     }
 
     // ふわふわ浮くアニメーション
@@ -114,7 +114,20 @@ export class Reia extends Phaser.GameObjects.Container {
         return;
       }
       
-      this.sprite.setTexture('reia_attack'); // 攻撃画像
+      // Container内のスプライトは setTexture が効かない場合があるため、
+      // 一度削除して再作成する
+      const oldX = this.sprite.x;
+      const oldY = this.sprite.y;
+      const oldScale = this.sprite.scaleX;
+      
+      this.sprite.destroy();
+      
+      // 新しいテクスチャでスプライトを再作成
+      this.sprite = this.scene.add.sprite(oldX, oldY, 'reia_attack');
+      this.sprite.setScale(oldScale);
+      this.sprite.setOrigin(0.5, 0.5);
+      this.add(this.sprite);
+      
       console.log('攻撃画像に切り替えました: reia_attack');
       
       // 一定時間後に待機ポーズに戻る（表示時間を少し長くする）
@@ -160,20 +173,61 @@ export class Reia extends Phaser.GameObjects.Container {
     
     // 優先度高：ゲームオーバー/気絶
     if (hpRatio <= 0) {
-        this.sprite.setTexture('reia_damage');
+        this.changeTexture('reia_damage');
         return;
     }
 
     // ストレス/HPによる状態変化
     if (this.stressLevel >= 80 || hpRatio <= 0.2) {
-        this.sprite.setTexture('reia_panic');
+        this.changeTexture('reia_panic');
     } else if (this.stressLevel >= 50) {
-        this.sprite.setTexture('reia_anxious');
+        this.changeTexture('reia_anxious');
     } else if (this.comboCount >= 10) {
-        this.sprite.setTexture('reia_focus');
+        this.changeTexture('reia_focus');
     } else {
-        this.sprite.setTexture('reia_normal');
+        this.changeTexture('reia_normal');
     }
+  }
+
+  /**
+   * テクスチャを変更（Container内のスプライト対応）
+   */
+  private changeTexture(textureKey: string): void {
+    if (!this.sprite) {
+      console.warn(`changeTexture: スプライトが存在しません (${textureKey})`);
+      return;
+    }
+    
+    // 画像が読み込まれているか確認
+    const texture = this.scene.textures.get(textureKey);
+    if (!texture) {
+      console.warn(`changeTexture: テクスチャ "${textureKey}" が読み込まれていません`);
+      return;
+    }
+    
+    // 現在のスプライトの状態を保存
+    const oldX = this.sprite.x;
+    const oldY = this.sprite.y;
+    const oldScale = this.sprite.scaleX;
+    
+    console.log(`changeTexture: ${textureKey} に切り替え (x=${oldX}, y=${oldY}, scale=${oldScale})`);
+    
+    // Containerからスプライトを削除
+    this.remove(this.sprite);
+    
+    // 古いスプライトを削除
+    this.sprite.destroy();
+    this.sprite = null;
+    
+    // 新しいテクスチャでスプライトを再作成
+    this.sprite = this.scene.add.sprite(oldX, oldY, textureKey);
+    this.sprite.setScale(oldScale);
+    this.sprite.setOrigin(0.5, 0.5);
+    
+    // Containerに追加
+    this.add(this.sprite);
+    
+    console.log(`changeTexture: スプライト再作成完了 (texture=${this.sprite.texture.key})`);
   }
 
   /**
@@ -288,25 +342,27 @@ export class Reia extends Phaser.GameObjects.Container {
     // タイプに応じたポーズ
     switch (type) {
         case 'focus':
-            this.sprite.setTexture('reia_focus');
+            this.changeTexture('reia_focus');
             break;
         case 'burst':
-            this.sprite.setTexture('reia_attack'); // 攻撃画像
+            this.changeTexture('reia_attack'); // 攻撃画像
             break;
         case 'creative':
-            this.sprite.setTexture('reia_attack'); // 攻撃画像
+            this.changeTexture('reia_attack'); // 攻撃画像
             break;
     }
 
     // 演出エフェクト
-    this.scene.tweens.add({
-      targets: this.sprite,
-      scaleX: 1.2,
-      scaleY: 1.2,
-      duration: 200,
-      yoyo: true,
-      ease: 'Power2',
-    });
+    if (this.sprite) {
+      this.scene.tweens.add({
+        targets: this.sprite,
+        scaleX: 1.2,
+        scaleY: 1.2,
+        duration: 200,
+        yoyo: true,
+        ease: 'Power2',
+      });
+    }
   }
 
   /**
