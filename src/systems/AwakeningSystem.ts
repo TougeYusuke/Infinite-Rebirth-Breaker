@@ -89,8 +89,8 @@ export class AwakeningSystem {
       return false; // 既に覚醒中
     }
     
-    // コンボが10以上で発動
-    if (comboCount >= 10) {
+    // テンションゲージが満タン（100%）かつコンボが10以上で発動
+    if (this.tensionGauge >= this.maxTension && comboCount >= 10) {
       this.activateAwakening(AwakeningType.FOCUS, 10000); // 10秒
       return true;
     }
@@ -106,8 +106,8 @@ export class AwakeningSystem {
       return false; // 既に覚醒中
     }
     
-    // ストレスがMAX（100%）で発動
-    if (stressLevel >= 1.0) {
+    // テンションゲージが満タン（100%）かつストレスがMAX（100%）で発動
+    if (this.tensionGauge >= this.maxTension && stressLevel >= 1.0) {
       this.activateAwakening(AwakeningType.BURST, 0); // 1回のみ（持続時間なし）
       return true;
     }
@@ -121,6 +121,11 @@ export class AwakeningSystem {
   checkCreativeAwakening(taskType: TaskType): boolean {
     if (this.currentAwakening.isActive) {
       return false; // 既に覚醒中
+    }
+    
+    // テンションゲージが満タン（100%）でない場合は発動しない
+    if (this.tensionGauge < this.maxTension) {
+      return false;
     }
     
     // 連続記録を更新
