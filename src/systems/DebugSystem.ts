@@ -12,6 +12,7 @@ export interface DebugConfig {
   attackPowerMultiplier: number; // 攻撃力倍率（デフォルト: 1.0）
   taskSpawnInterval: number;     // タスク生成間隔（ミリ秒、デフォルト: 3000）
   autoAttackInterval: number;    // オート攻撃間隔（ミリ秒、デフォルト: 1000）
+  showWaveInfo: boolean;         // Wave情報を表示するかどうか
 }
 
 /**
@@ -27,6 +28,7 @@ export class DebugSystem {
       attackPowerMultiplier: 1.0,
       taskSpawnInterval: 3000,
       autoAttackInterval: 1000,
+      showWaveInfo: false, // デフォルトは非表示
     };
   }
 
@@ -87,6 +89,20 @@ export class DebugSystem {
   }
 
   /**
+   * Wave情報の表示設定
+   */
+  setShowWaveInfo(show: boolean): void {
+    this.config.showWaveInfo = show;
+  }
+
+  /**
+   * Wave情報を表示するかどうか
+   */
+  isShowWaveInfo(): boolean {
+    return this.config.showWaveInfo;
+  }
+
+  /**
    * 設定を取得
    */
   getConfig(): DebugConfig {
@@ -102,6 +118,7 @@ export class DebugSystem {
       attackPowerMultiplier: 1.0,
       taskSpawnInterval: 3000,
       autoAttackInterval: 1000,
+      showWaveInfo: false,
     };
   }
 }

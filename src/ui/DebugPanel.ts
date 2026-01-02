@@ -22,6 +22,7 @@ export class DebugPanel {
   private attackPowerText: Phaser.GameObjects.Text | null = null;
   private taskSpawnText: Phaser.GameObjects.Text | null = null;
   private autoAttackText: Phaser.GameObjects.Text | null = null;
+  private waveInfoText: Phaser.GameObjects.Text | null = null;
   private closeButton: Phaser.GameObjects.Text | null = null;
 
   constructor(scene: Phaser.Scene, debugSystem: DebugSystem) {
@@ -74,6 +75,13 @@ export class DebugPanel {
       color: '#ffffff',
     }).setOrigin(0.5);
     this.panel.add(this.autoAttackText);
+    
+    // Wave情報表示
+    this.waveInfoText = this.scene.add.text(0, 60, '', {
+      fontSize: '18px',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+    this.panel.add(this.waveInfoText);
     
     // 閉じるボタン
     this.closeButton = this.scene.add.text(0, 150, '閉じる (Dキー)', {
@@ -130,7 +138,7 @@ export class DebugPanel {
    * 表示を更新
    */
   updateDisplay(): void {
-    if (!this.attackPowerText || !this.taskSpawnText || !this.autoAttackText) {
+    if (!this.attackPowerText || !this.taskSpawnText || !this.autoAttackText || !this.waveInfoText) {
       return;
     }
     
@@ -152,6 +160,12 @@ export class DebugPanel {
     this.autoAttackText.setText(
       `オート攻撃間隔: ${config.autoAttackInterval}ms\n` +
       `[Z/X] 減少/増加 (100ms単位)`
+    );
+    
+    // Wave情報表示
+    this.waveInfoText.setText(
+      `Wave情報: ${config.showWaveInfo ? '表示' : '非表示'}\n` +
+      `[W] 切り替え`
     );
   }
 
@@ -210,6 +224,14 @@ export class DebugPanel {
     if (Phaser.Input.Keyboard.JustDown(keyboard.addKey('X'))) {
       const current = this.debugSystem.getAutoAttackInterval();
       this.debugSystem.setAutoAttackInterval(current + 100);
+      this.updateDisplay();
+      configChanged = true;
+    }
+    
+    // Wave情報の表示切替（Wキー）
+    if (Phaser.Input.Keyboard.JustDown(keyboard.addKey('W'))) {
+      const current = this.debugSystem.isShowWaveInfo();
+      this.debugSystem.setShowWaveInfo(!current);
       this.updateDisplay();
       configChanged = true;
     }

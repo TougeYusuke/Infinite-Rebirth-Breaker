@@ -208,7 +208,7 @@ export class GameScene extends Phaser.Scene {
     
     // --- ヘッダー領域 ---
     
-    // Wave情報（左上）
+    // Wave情報（左上） - デフォルトで非表示
     this.waveText = this.add.text(20, safeAreaTop, 'Wave: 1', {
       fontSize: '24px',
       color: '#ffffff',
@@ -216,6 +216,7 @@ export class GameScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 4,
     }).setDepth(20);
+    this.waveText.setVisible(false); // デフォルト非表示
     
     // タスク数（Wave情報の下）
     this.taskCountText = this.add.text(20, safeAreaTop + 30, 'タスク: 0', {
@@ -224,6 +225,7 @@ export class GameScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 3,
     }).setDepth(20);
+    this.taskCountText.setVisible(false); // デフォルト非表示
     
     // --- ストレスバー（画面上部中央） ---
     
@@ -414,6 +416,11 @@ export class GameScene extends Phaser.Scene {
     if (this.taskCountText && this.taskManager) {
       const taskCount = this.taskManager.getTaskCount();
       this.taskCountText.setText(`タスク: ${taskCount}`);
+      
+      // デバッグ設定に応じて表示/非表示を切り替え
+      if (this.debugSystem) {
+        this.taskCountText.setVisible(this.debugSystem.isShowWaveInfo());
+      }
     }
     
     // --- Wave情報更新 ---
@@ -421,6 +428,11 @@ export class GameScene extends Phaser.Scene {
       const currentWave = this.waveSystem.getCurrentWave();
       const remainingTasks = this.waveSystem.getRemainingTasksInWave();
       this.waveText.setText(`Wave: ${currentWave} (残り: ${remainingTasks})`);
+      
+      // デバッグ設定に応じて表示/非表示を切り替え
+      if (this.debugSystem) {
+        this.waveText.setVisible(this.debugSystem.isShowWaveInfo());
+      }
     }
     
     // --- 報酬ステータス更新 ---
