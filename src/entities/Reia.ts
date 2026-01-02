@@ -115,42 +115,40 @@ export class Reia extends Phaser.GameObjects.Container {
       // 画像が読み込まれているか確認
       const texture = this.scene.textures.get('reia_attack');
       if (!texture) {
-        console.warn('reia_attack 画像が読み込まれていません');
         return;
       }
-      
+
       // 既存のアニメーションを停止（連打対策）
       this.scene.tweens.killTweensOf(this);
-      
+
       // 既存のタイマーがあればキャンセル
       if (this.attackAnimationTimer) {
         this.attackAnimationTimer.destroy();
         this.attackAnimationTimer = null;
       }
-      
+
       // 攻撃アニメーションフラグを立てる
       this.isAttackAnimation = true;
-      
+
       // changeTextureメソッドを使用してテクスチャを変更
       this.changeTexture('reia_attack');
-      console.log('攻撃画像に切り替えました: reia_attack');
-      
+
       // 新しいタイマーを開始（1秒後に待機ポーズに戻る）
       this.attackAnimationTimer = this.scene.time.delayedCall(1000, () => {
         // 攻撃アニメーションフラグを解除
         this.isAttackAnimation = false;
         this.attackAnimationTimer = null;
-        
+
         if (this.emotionState === EmotionState.NORMAL) {
-            this.playIdleAnimation();
+          this.playIdleAnimation();
         } else {
-            this.updateExpression(); // 現在の状態に合わせた表情に戻す
+          this.updateExpression(); // 現在の状態に合わせた表情に戻す
         }
       });
     }
 
     this.y = this.baseY; // 位置リセット
-    
+
     // 前に飛び出す動き
     this.scene.tweens.add({
       targets: this,
@@ -159,12 +157,12 @@ export class Reia extends Phaser.GameObjects.Container {
       duration: 50,
       yoyo: true,
       onComplete: () => {
-          this.scene.tweens.add({
-            targets: this,
-            scaleX: 1.0,
-            scaleY: 1.0,
-            duration: 100,
-          });
+        this.scene.tweens.add({
+          targets: this,
+          scaleX: 1.0,
+          scaleY: 1.0,
+          duration: 100,
+        });
       }
     });
   }
@@ -206,14 +204,12 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   private changeTexture(textureKey: string): void {
     if (!this.sprite) {
-      console.warn(`changeTexture: スプライトが存在しません (${textureKey})`);
       return;
     }
 
     // 画像が読み込まれているか確認
     const texture = this.scene.textures.get(textureKey);
     if (!texture) {
-      console.warn(`changeTexture: テクスチャ "${textureKey}" が読み込まれていません`);
       return;
     }
 
@@ -221,8 +217,6 @@ export class Reia extends Phaser.GameObjects.Container {
     const oldX = this.sprite.x;
     const oldY = this.sprite.y;
     const oldScale = this.sprite.scaleX;
-
-    console.log(`changeTexture: ${textureKey} に切り替え (x=${oldX}, y=${oldY}, scale=${oldScale})`);
 
     // Containerからスプライトを削除
     this.remove(this.sprite);
@@ -238,8 +232,6 @@ export class Reia extends Phaser.GameObjects.Container {
 
     // Containerに追加
     this.add(this.sprite);
-
-    console.log(`changeTexture: スプライト再作成完了 (texture=${this.sprite.texture.key})`);
   }
 
   /**
