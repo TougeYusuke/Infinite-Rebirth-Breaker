@@ -162,6 +162,8 @@ export class AwakeningSystem {
         // 次のフレームで自動的に終了
         this.currentAwakening.isActive = false;
         this.currentAwakening.type = null;
+        // テンションゲージをリセット
+        this.tensionGauge = 0;
         return;
       }
       
@@ -173,6 +175,8 @@ export class AwakeningSystem {
         this.currentAwakening.isActive = false;
         this.currentAwakening.type = null;
         this.currentAwakening.remainingTime = 0;
+        // テンションゲージをリセット
+        this.tensionGauge = 0;
       }
     }
   }
@@ -219,6 +223,8 @@ export class AwakeningSystem {
     this.currentAwakening.isActive = false;
     this.currentAwakening.type = null;
     this.currentAwakening.remainingTime = 0;
+    // テンションゲージをリセット
+    this.tensionGauge = 0;
   }
 
   /**
