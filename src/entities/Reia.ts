@@ -69,28 +69,18 @@ export class Reia extends Phaser.GameObjects.Container {
    * スプライトの作成
    */
   private createSprite(): void {
-    // スプライトシートから画像を作成
-    // フレームサイズ 400x400 を想定
-    this.sprite = this.scene.add.sprite(0, 0, 'reia', 1); // デフォルトは上段中央（微笑み）
+    // 初期画像を作成（通常状態）
+    this.sprite = this.scene.add.sprite(0, 0, 'reia_normal');
     
     // サイズ調整
-    // 400pxだとかなり大きいので縮小 (約100-120px程度に)
+    // 個別画像はサイズがバラバラの可能性があるため、必要に応じて調整
+    // ここでは基準サイズに合わせてスケールを設定するか、縮小率を指定する
     this.sprite.setScale(0.25);
     
-    // アンカー調整（足元が見切れる場合の微調整）
-    // 原点を中心(0.5, 0.5)から少し下(0.5, 0.6)などにずらすことで表示位置を変えることが可能
-    // 今回は標準の0.5でまず確認
+    // アンカー調整
     this.sprite.setOrigin(0.5, 0.5);
     
     this.add(this.sprite);
-    
-    // デバッグ用の名前表示（オプション）
-    // const text = this.scene.add.text(0, 80, 'れいあ', {
-    //   fontSize: '16px',
-    //   color: '#ffffff',
-    //   fontStyle: 'bold',
-    // }).setOrigin(0.5);
-    // this.add(text);
   }
 
   /**
@@ -98,7 +88,7 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   playIdleAnimation(): void {
     if (this.sprite) {
-      this.sprite.setFrame(1); // 上段中央（微笑み）
+      this.sprite.setTexture('reia_normal');
     }
 
     // ふわふわ浮くアニメーション
@@ -117,10 +107,18 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   playTapAnimation(): void {
     if (this.sprite) {
-      this.sprite.setFrame(5); // 中段右（指差しコード魔法）
+      // 画像が読み込まれているか確認
+      const texture = this.scene.textures.get('reia_attack');
+      if (!texture) {
+        console.warn('reia_attack 画像が読み込まれていません');
+        return;
+      }
       
-      // 一定時間後に待機ポーズに戻る
-      this.scene.time.delayedCall(300, () => {
+      this.sprite.setTexture('reia_attack'); // 攻撃画像
+      console.log('攻撃画像に切り替えました: reia_attack');
+      
+      // 一定時間後に待機ポーズに戻る（表示時間を少し長くする）
+      this.scene.time.delayedCall(500, () => {
         if (this.emotionState === EmotionState.NORMAL) {
             this.playIdleAnimation();
         } else {
@@ -162,19 +160,19 @@ export class Reia extends Phaser.GameObjects.Container {
     
     // 優先度高：ゲームオーバー/気絶
     if (hpRatio <= 0) {
-        this.sprite.setFrame(8); // 下段右（気絶）
+        this.sprite.setTexture('reia_damage');
         return;
     }
 
     // ストレス/HPによる状態変化
     if (this.stressLevel >= 80 || hpRatio <= 0.2) {
-        this.sprite.setFrame(7); // 下段中央（パニック）
+        this.sprite.setTexture('reia_panic');
     } else if (this.stressLevel >= 50) {
-        this.sprite.setFrame(6); // 下段左（泣き/困り）
+        this.sprite.setTexture('reia_anxious');
     } else if (this.comboCount >= 10) {
-        this.sprite.setFrame(4); // 中段中央（レンチ/やる気）
+        this.sprite.setTexture('reia_focus');
     } else {
-        this.sprite.setFrame(1); // 上段中央（通常）
+        this.sprite.setTexture('reia_normal');
     }
   }
 
@@ -321,4 +319,3 @@ export class Reia extends Phaser.GameObjects.Container {
     super.destroy();
   }
 }
-
