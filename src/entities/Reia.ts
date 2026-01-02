@@ -48,6 +48,7 @@ export class Reia extends Phaser.GameObjects.Container {
   private hp: number = 100;
   private maxHp: number = 100;
   private baseY: number = 0; // 元のY座標（アニメーション用）
+  private isAttackAnimation: boolean = false; // 攻撃アニメーション中かどうか
 
   constructor(scene: Phaser.Scene, config: ReiaConfig) {
     super(scene, config.x, config.y);
@@ -89,7 +90,7 @@ export class Reia extends Phaser.GameObjects.Container {
   playIdleAnimation(): void {
     // 既存のアニメーションを停止
     this.scene.tweens.killTweensOf(this);
-    
+
     if (this.sprite) {
       this.changeTexture('reia_normal');
     }
@@ -120,12 +121,18 @@ export class Reia extends Phaser.GameObjects.Container {
       // 既存のアニメーションを停止（連打対策）
       this.scene.tweens.killTweensOf(this);
       
+      // 攻撃アニメーションフラグを立てる
+      this.isAttackAnimation = true;
+      
       // changeTextureメソッドを使用してテクスチャを変更
       this.changeTexture('reia_attack');
       console.log('攻撃画像に切り替えました: reia_attack');
       
       // 一定時間後に待機ポーズに戻る（表示時間を長くする）
       this.scene.time.delayedCall(1000, () => {
+        // 攻撃アニメーションフラグを解除
+        this.isAttackAnimation = false;
+        
         if (this.emotionState === EmotionState.NORMAL) {
             this.playIdleAnimation();
         } else {
@@ -158,6 +165,11 @@ export class Reia extends Phaser.GameObjects.Container {
    * 表情を更新
    */
   private updateExpression(): void {
+    // 攻撃アニメーション中は画像を変更しない
+    if (this.isAttackAnimation) {
+      return;
+    }
+    
     if (!this.sprite) return;
 
     // HP状態に応じた表情
