@@ -21,6 +21,7 @@ import { DamagePopup } from '../ui/DamagePopup';
 import { DecimalWrapper } from '../utils/Decimal';
 import { Rebirth } from '../systems/Rebirth';
 import { GameOverScene, GameOverInfo } from './GameOverScene';
+import { AwakeningEffect } from '../effects/AwakeningEffect';
 
 export class GameScene extends Phaser.Scene {
   private reia: Reia | null = null;
@@ -33,6 +34,7 @@ export class GameScene extends Phaser.Scene {
   private debugSystem: DebugSystem | null = null;
   private debugPanel: DebugPanel | null = null;
   private waveSystem: WaveSystem | null = null;
+  private awakeningEffect: AwakeningEffect | null = null;
   private totalDamage: DecimalWrapper = new DecimalWrapper(0);
   private isGameOver: boolean = false;
   private startWave: number = 1; // 開始Wave数（Quick Skip用）
@@ -144,6 +146,9 @@ export class GameScene extends Phaser.Scene {
     if (this.startWave > 1) {
       this.waveSystem.setWave(this.startWave);
     }
+    
+    // 覚醒モードのエフェクト
+    this.awakeningEffect = new AwakeningEffect(this);
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
@@ -680,10 +685,20 @@ export class GameScene extends Phaser.Scene {
     if (this.awakeningSystem) {
       this.awakeningSystem.update(delta);
       
-      // 覚醒モードが終了した場合、オート攻撃を再開
-      if (!this.awakeningSystem.isAwakeningActive() && this.autoAttackTimer) {
-        this.restartAutoAttackIfNeeded();
+      // 覚醒モードが終了した場合、エフェクトを停止してオート攻撃を再開
+      if (!this.awakeningSystem.isAwakeningActive()) {
+        if (this.awakeningEffect) {
+          this.awakeningEffect.stop();
+        }
+        if (this.autoAttackTimer) {
+          this.restartAutoAttackIfNeeded();
+        }
       }
+    }
+    
+    // 覚醒モードのエフェクトを更新
+    if (this.awakeningEffect) {
+      this.awakeningEffect.update();
     }
     
     // デバッグパネルを更新
@@ -893,38 +908,73 @@ export class GameScene extends Phaser.Scene {
    * 集中覚醒を発動
    */
   private activateFocusAwakening(): void {
-    if (!this.reia) {
+    if (!this.reia || !this.awakeningEffect) {
       return;
     }
+    
+    // エフェクトを開始
+    this.awakeningEffect.start(AwakeningType.FOCUS, this.reia.x, this.reia.y);
     
     // れいあの覚醒アニメーション
     this.reia.playAwakeningAnimation('focus');
     
-    // セリフを表示
+    // セリフを表示（ランダムに選択）
+    const dialogues = ['やれる！', 'いくよ！', '集中できる！', '覚醒！'];
+    const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
     if (this.dialogueText) {
-      this.dialogueText.setText('集中できる！');
+      this.dialogueText.setText(dialogue);
       this.dialogueText.setAlpha(1.0);
+      this.dialogueText.setColor('#4ecdc4'); // 青緑色
+      
+      // セリフをフェードアウト
+      this.tweens.add({
+        targets: this.dialogueText,
+        alpha: 0,
+        duration: 2000,
+        delay: 1000,
+      });
     }
     
     // オート攻撃間隔を調整（攻撃速度2倍 = 間隔を半分に）
     this.restartAutoAttackIfNeeded();
+    
+    // 覚醒モード終了時にエフェクトを停止
+    this.time.delayedCall(10000, () => {
+      if (this.awakeningEffect) {
+        this.awakeningEffect.stop();
+      }
+    });
   }
 
   /**
    * 爆発覚醒を発動
    */
   private activateBurstAwakening(): void {
-    if (!this.taskManager || !this.stressSystem || !this.reia) {
+    if (!this.taskManager || !this.stressSystem || !this.reia || !this.awakeningEffect) {
       return;
     }
+    
+    // エフェクトを開始
+    this.awakeningEffect.start(AwakeningType.BURST, this.reia.x, this.reia.y);
     
     // れいあの覚醒アニメーション
     this.reia.playAwakeningAnimation('burst');
     
-    // セリフを表示
+    // セリフを表示（ランダムに選択）
+    const dialogues = ['もう無理...でもやる！', 'やれる！', 'いくよ！', '爆発！'];
+    const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
     if (this.dialogueText) {
-      this.dialogueText.setText('もう無理...でもやる！');
+      this.dialogueText.setText(dialogue);
       this.dialogueText.setAlpha(1.0);
+      this.dialogueText.setColor('#ff6b6b'); // 赤色
+      
+      // セリフをフェードアウト
+      this.tweens.add({
+        targets: this.dialogueText,
+        alpha: 0,
+        duration: 2000,
+        delay: 1000,
+      });
     }
     
     // 画面内のタスクを一気にクリア
@@ -944,24 +994,52 @@ export class GameScene extends Phaser.Scene {
     if (this.combo) {
       this.combo.addCombo(tasks.length);
     }
+    
+    // エフェクトをすぐに停止（爆発覚醒は一瞬）
+    this.time.delayedCall(1000, () => {
+      if (this.awakeningEffect) {
+        this.awakeningEffect.stop();
+      }
+    });
   }
 
   /**
    * 創造覚醒を発動
    */
   private activateCreativeAwakening(): void {
-    if (!this.reia) {
+    if (!this.reia || !this.awakeningEffect) {
       return;
     }
+    
+    // エフェクトを開始
+    this.awakeningEffect.start(AwakeningType.CREATIVE, this.reia.x, this.reia.y);
     
     // れいあの覚醒アニメーション
     this.reia.playAwakeningAnimation('creative');
     
-    // セリフを表示
+    // セリフを表示（ランダムに選択）
+    const dialogues = ['閃いた！', 'これでいける！', 'やれる！', '創造！'];
+    const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
     if (this.dialogueText) {
-      this.dialogueText.setText('閃いた！');
+      this.dialogueText.setText(dialogue);
       this.dialogueText.setAlpha(1.0);
+      this.dialogueText.setColor('#ffd93d'); // 黄色
+      
+      // セリフをフェードアウト
+      this.tweens.add({
+        targets: this.dialogueText,
+        alpha: 0,
+        duration: 2000,
+        delay: 1000,
+      });
     }
+    
+    // 覚醒モード終了時にエフェクトを停止
+    this.time.delayedCall(15000, () => {
+      if (this.awakeningEffect) {
+        this.awakeningEffect.stop();
+      }
+    });
   }
 
   /**
