@@ -38,9 +38,15 @@ export class AttackSystem {
    * @param reia - れいあキャラクター
    * @param combo - コンボシステム
    * @param isAutoAttack - オート攻撃かどうか
+   * @param featureAttackMultiplier - 仕様理解度の攻撃力倍率（オプション）
    * @returns ダメージ値
    */
-  calculateDamage(reia: Reia, combo: Combo, isAutoAttack: boolean = false): DecimalWrapper {
+  calculateDamage(
+    reia: Reia,
+    combo: Combo,
+    isAutoAttack: boolean = false,
+    featureAttackMultiplier: number = 1.0
+  ): DecimalWrapper {
     // 基本ダメージ
     let damage = this.baseDamage;
     
@@ -56,6 +62,9 @@ export class AttackSystem {
     const statusMultiplier = reia.getStatusMultiplier();
     damage *= statusMultiplier.attack;
     
+    // 仕様理解度の倍率
+    damage *= featureAttackMultiplier;
+    
     // オート攻撃の場合はダメージを減らす
     if (isAutoAttack) {
       damage *= this.autoAttackDamageRatio;
@@ -65,10 +74,13 @@ export class AttackSystem {
   }
 
   /**
-   * オート攻撃の間隔を取得
+   * オート攻撃の間隔を取得（コード品質の効果を考慮）
+   * 
+   * @param codeQualitySpeedMultiplier - コード品質の速度倍率（オプション、デフォルト: 1.0）
+   * @returns オート攻撃の間隔（ミリ秒）
    */
-  getAutoAttackInterval(): number {
-    return this.autoAttackInterval;
+  getAutoAttackInterval(codeQualitySpeedMultiplier: number = 1.0): number {
+    return this.autoAttackInterval * codeQualitySpeedMultiplier;
   }
 }
 

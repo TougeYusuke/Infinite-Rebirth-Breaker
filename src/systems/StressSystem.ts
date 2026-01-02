@@ -35,8 +35,13 @@ export class StressSystem {
    * 
    * @param distance - タスクとの距離（近いほどストレスが増える）
    * @param taskType - タスクの種類（緊急タスク > 仕様変更 > バグ）
+   * @param stressResistance - 緊急対応力のストレス耐性（オプション、デフォルト: 1.0）
    */
-  increaseStress(distance: number, taskType: 'bug' | 'feature' | 'review' | 'urgent'): void {
+  increaseStress(
+    distance: number,
+    taskType: 'bug' | 'feature' | 'review' | 'urgent',
+    stressResistance: number = 1.0
+  ): void {
     // 距離に応じた係数（近いほど大きい）
     const distanceFactor = Math.max(0.1, 1.0 / (distance / 100 + 1));
     
@@ -48,8 +53,8 @@ export class StressSystem {
       urgent: 1.5,
     }[taskType];
 
-    // ストレス増加
-    const increase = this.stressIncreaseBase * distanceFactor * taskTypeFactor;
+    // ストレス増加（緊急対応力の効果を適用）
+    const increase = this.stressIncreaseBase * distanceFactor * taskTypeFactor * stressResistance;
     this.stress = Math.min(this.maxStress, this.stress + increase);
   }
 

@@ -10,6 +10,7 @@ import { StressSystem } from '../systems/StressSystem';
 import { Combo } from '../systems/Combo';
 import { TaskManager, TaskManagerConfig } from '../systems/TaskManager';
 import { AttackSystem, AttackSystemConfig } from '../systems/AttackSystem';
+import { TaskRewardSystem } from '../systems/TaskRewardSystem';
 import { CodeBullet, CodeBulletConfig } from '../entities/CodeBullet';
 import { Task } from '../entities/Task';
 import { DamagePopup } from '../ui/DamagePopup';
@@ -21,7 +22,11 @@ export class GameScene extends Phaser.Scene {
   private combo: Combo | null = null;
   private taskManager: TaskManager | null = null;
   private attackSystem: AttackSystem | null = null;
+  private taskRewardSystem: TaskRewardSystem | null = null;
   private stage: number = 1;
+  
+  // オート攻撃関連
+  private autoAttackTimer: Phaser.Time.TimerEvent | null = null;
   
   // 攻撃関連
   private bullets: CodeBullet[] = [];
@@ -32,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private stressText: Phaser.GameObjects.Text | null = null;
   private dialogueText: Phaser.GameObjects.Text | null = null;
   private taskCountText: Phaser.GameObjects.Text | null = null;
+  private rewardStatusText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -83,6 +89,9 @@ export class GameScene extends Phaser.Scene {
       autoAttackDamageRatio: 0.5, // タップ攻撃の50%
     };
     this.attackSystem = new AttackSystem(attackConfig);
+    
+    // タスク報酬システム
+    this.taskRewardSystem = new TaskRewardSystem();
     
     // オート攻撃タイマーを開始
     this.startAutoAttack();
@@ -158,6 +167,14 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 10, y: 5 },
     }).setOrigin(0.5).setDepth(10);
     
+    // 報酬ステータステキスト
+    this.rewardStatusText = this.add.text(centerX, 160, '', {
+      fontSize: '14px',
+      color: '#4ecdc4',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(10);
+    
     this.updateUI();
   }
 
@@ -209,6 +226,44 @@ export class GameScene extends Phaser.Scene {
         this.dialogueText.setAlpha(0.0);
       }
     }
+    
+    // 報酬ステータスを更新
+    if (this.rewardStatusText && this.taskRewardSystem) {
+      const statusLines: string[] = [];
+      
+      // 仕様理解度
+      const featureTime = this.taskRewardSystem.getFeatureRemainingTime();
+      if (featureTime > 0) {
+        const seconds = Math.ceil(featureTime / 1000);
+        const multiplier = this.taskRewardSystem.getFeatureAttackMultiplier();
+        statusLines.push(`仕様理解度: ${(multiplier * 100).toFixed(0)}% (${seconds}秒)`);
+      }
+      
+      // コード品質
+      const codeQualityLevel = this.taskRewardSystem.getCodeQualityLevel();
+      if (codeQualityLevel > 0) {
+        statusLines.push(`コード品質: Lv.${codeQualityLevel}`);
+      }
+      
+      // 緊急対応力
+      const emergencyLevel = this.taskRewardSystem.getEmergencyResponseLevel();
+      if (emergencyLevel > 0) {
+        statusLines.push(`緊急対応力: Lv.${emergencyLevel}`);
+      }
+      
+      // デバッグポイント
+      const debugPoints = this.taskRewardSystem.getDebugPoints();
+      if (debugPoints > 0) {
+        statusLines.push(`デバッグポイント: ${debugPoints}`);
+      }
+      
+      if (statusLines.length > 0) {
+        this.rewardStatusText.setText(statusLines.join(' | '));
+        this.rewardStatusText.setAlpha(1.0);
+      } else {
+        this.rewardStatusText.setAlpha(0.0);
+      }
+    }
   }
 
   /**
@@ -232,19 +287,46 @@ export class GameScene extends Phaser.Scene {
    * オート攻撃を開始
    */
   private startAutoAttack(): void {
-    if (!this.attackSystem) {
+    if (!this.attackSystem || !this.taskRewardSystem) {
       return;
     }
     
-    const interval = this.attackSystem.getAutoAttackInterval();
-    // オート攻撃タイマーを開始（将来的に停止する場合は変数に保存する）
-    this.time.addEvent({
+    // コード品質の効果を考慮した間隔を取得
+    const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
+    const interval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    
+    // 既存のタイマーを停止
+    if (this.autoAttackTimer) {
+      this.autoAttackTimer.destroy();
+    }
+    
+    // オート攻撃タイマーを開始
+    this.autoAttackTimer = this.time.addEvent({
       delay: interval,
       callback: () => {
         this.performAutoAttack();
+        // コード品質が変わった場合に間隔を再計算
+        this.restartAutoAttackIfNeeded();
       },
       loop: true,
     });
+  }
+
+  /**
+   * オート攻撃を再開（コード品質が変わった場合）
+   */
+  private restartAutoAttackIfNeeded(): void {
+    if (!this.attackSystem || !this.taskRewardSystem) {
+      return;
+    }
+    
+    const codeQualityMultiplier = this.taskRewardSystem.getCodeQualitySpeedMultiplier();
+    const currentInterval = this.attackSystem.getAutoAttackInterval(codeQualityMultiplier);
+    
+    // タイマーの間隔が変わった場合は再起動
+    if (this.autoAttackTimer && this.autoAttackTimer.delay !== currentInterval) {
+      this.startAutoAttack();
+    }
   }
 
   /**
@@ -272,9 +354,12 @@ export class GameScene extends Phaser.Scene {
       }
     }
     
-    if (nearestTask) {
+    if (nearestTask && this.taskRewardSystem) {
+      // 仕様理解度の倍率を取得
+      const featureMultiplier = this.taskRewardSystem.getFeatureAttackMultiplier();
+      
       // ダメージを計算
-      const damage = this.attackSystem.calculateDamage(this.reia, this.combo, true);
+      const damage = this.attackSystem.calculateDamage(this.reia, this.combo, true, featureMultiplier);
       
       // 弾丸を発射
       this.fireBullet(this.reia.x, this.reia.y, nearestTask.x, nearestTask.y, damage);
@@ -292,8 +377,11 @@ export class GameScene extends Phaser.Scene {
     // れいあのタップアニメーション
     this.reia.playTapAnimation();
     
+    // 仕様理解度の倍率を取得
+    const featureMultiplier = this.taskRewardSystem?.getFeatureAttackMultiplier() || 1.0;
+    
     // ダメージを計算
-    const damage = this.attackSystem.calculateDamage(this.reia, this.combo, false);
+    const damage = this.attackSystem.calculateDamage(this.reia, this.combo, false, featureMultiplier);
     
     // 弾丸を発射
     this.fireBullet(this.reia.x, this.reia.y, x, y, damage);
@@ -326,11 +414,14 @@ export class GameScene extends Phaser.Scene {
       
       // タスクが近づいた時にストレスを増加させる
       const tasks = this.taskManager.getTasks();
-      if (this.stressSystem && this.reia) {
+      if (this.stressSystem && this.reia && this.taskRewardSystem) {
+        // 緊急対応力のストレス耐性を取得
+        const stressResistance = this.taskRewardSystem.getEmergencyStressResistance();
+        
         for (const task of tasks) {
           const distance = task.getDistanceToTarget();
           if (distance < 200) { // 200ピクセル以内
-            this.stressSystem.increaseStress(distance, task.getType());
+            this.stressSystem.increaseStress(distance, task.getType(), stressResistance);
           }
         }
       }
@@ -352,6 +443,11 @@ export class GameScene extends Phaser.Scene {
     
     // ダメージポップアップを更新
     this.updateDamagePopups();
+    
+    // タスク報酬システムを更新（仕様理解度の残り時間など）
+    if (this.taskRewardSystem) {
+      this.taskRewardSystem.update(delta);
+    }
     
     // れいあの状態を更新
     this.updateReiaState();
@@ -437,7 +533,7 @@ export class GameScene extends Phaser.Scene {
    * タスクを倒した時の処理
    */
   private onTaskDefeated(task: Task): void {
-    if (!this.taskManager || !this.stressSystem || !this.combo) {
+    if (!this.taskManager || !this.stressSystem || !this.combo || !this.taskRewardSystem) {
       return;
     }
     
@@ -446,6 +542,12 @@ export class GameScene extends Phaser.Scene {
     
     // ストレスを減少
     this.stressSystem.decreaseStress(this.combo.getComboCount());
+    
+    // タスク報酬を処理
+    this.taskRewardSystem.onTaskDefeated(task.getType(), 0);
+    
+    // コード品質が変わった場合はオート攻撃を再開
+    this.restartAutoAttackIfNeeded();
     
     // タスクを削除
     this.taskManager.removeTask(task);
