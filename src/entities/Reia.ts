@@ -70,12 +70,17 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   private createSprite(): void {
     // スプライトシートから画像を作成
-    // フレームサイズ 341x341 を想定
+    // フレームサイズ 400x400 を想定
     this.sprite = this.scene.add.sprite(0, 0, 'reia', 1); // デフォルトは上段中央（微笑み）
     
     // サイズ調整
-    // 元が341pxだと大きすぎるので、画面に合わせて縮小 (約100px程度に)
-    this.sprite.setScale(0.3);
+    // 400pxだとかなり大きいので縮小 (約100-120px程度に)
+    this.sprite.setScale(0.25);
+    
+    // アンカー調整（足元が見切れる場合の微調整）
+    // 原点を中心(0.5, 0.5)から少し下(0.5, 0.6)などにずらすことで表示位置を変えることが可能
+    // 今回は標準の0.5でまず確認
+    this.sprite.setOrigin(0.5, 0.5);
     
     this.add(this.sprite);
     
