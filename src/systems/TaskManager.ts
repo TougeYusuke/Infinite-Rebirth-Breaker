@@ -7,6 +7,7 @@
 import Phaser from 'phaser';
 import { Task, TaskType } from '../entities/Task';
 import { Reia } from '../entities/Reia';
+import { WaveSystem } from './WaveSystem';
 
 /**
  * タスクマネージャーの設定
@@ -16,6 +17,7 @@ export interface TaskManagerConfig {
   maxTasks: number;          // 最大タスク数
   spawnRadius: number;       // 生成半径（れいあからの距離）
   stage: number;            // 現在のステージ
+  waveSystem?: WaveSystem;  // Waveシステム（オプション）
 }
 
 /**
@@ -28,11 +30,13 @@ export class TaskManager {
   private tasks: Task[] = [];
   private spawnTimer: Phaser.Time.TimerEvent | null = null;
   private lastSpawnTime: number = 0;
+  private waveSystem: WaveSystem | null = null;
 
   constructor(scene: Phaser.Scene, reia: Reia, config: TaskManagerConfig) {
     this.scene = scene;
     this.reia = reia;
     this.config = config;
+    this.waveSystem = config.waveSystem || null;
   }
 
   /**
@@ -42,12 +46,31 @@ export class TaskManager {
     // 最初のタスクを生成
     this.spawnTask();
     
-    // 定期的にタスクを生成
+    // 定期的にタスクを生成（WaveSystemの倍率を考慮）
+    const baseInterval = this.config.spawnInterval;
+    const waveMultiplier = this.waveSystem?.getSpawnIntervalMultiplier() || 1.0;
+    const actualInterval = baseInterval * waveMultiplier;
+    
     this.spawnTimer = this.scene.time.addEvent({
-      delay: this.config.spawnInterval,
+      delay: actualInterval,
       callback: () => {
         if (this.tasks.length < this.config.maxTasks) {
           this.spawnTask();
+        }
+        // WaveSystemの倍率が変わった場合に間隔を更新
+        const newMultiplier = this.waveSystem?.getSpawnIntervalMultiplier() || 1.0;
+        const newInterval = baseInterval * newMultiplier;
+        if (this.spawnTimer && this.spawnTimer.delay !== newInterval) {
+          this.spawnTimer.destroy();
+          this.spawnTimer = this.scene.time.addEvent({
+            delay: newInterval,
+            callback: () => {
+              if (this.tasks.length < this.config.maxTasks) {
+                this.spawnTask();
+              }
+            },
+            loop: true,
+          });
         }
       },
       loop: true,
@@ -103,10 +126,19 @@ export class TaskManager {
     // タスクの種類をランダムに決定（重み付け）
     const taskType = this.selectRandomTaskType();
     
+    // WaveSystemの難易度倍率を考慮したstageを計算
+    let effectiveStage = this.config.stage;
+    if (this.waveSystem) {
+      // Wave数に応じた難易度倍率をstageに反映
+      const difficultyMultiplier = this.waveSystem.getTaskHPMultiplier();
+      // 倍率をstageに変換（1.2倍 = stage + 1相当）
+      effectiveStage = Math.floor(this.config.stage * difficultyMultiplier);
+    }
+    
     // タスクを作成
     const task = new Task(this.scene, {
       type: taskType,
-      stage: this.config.stage,
+      stage: effectiveStage,
       x: spawnX,
       y: spawnY,
       targetX: reiaX,

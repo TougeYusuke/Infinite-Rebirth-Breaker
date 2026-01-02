@@ -157,18 +157,18 @@ export class GameOverScene extends Phaser.Scene {
    * 「最初から無双する（Full Run）」で開始
    */
   private startFullRun(): void {
-    // ステージ1から開始
-    this.scene.start('BattleScene', { startStage: 1, isFullRun: true });
+    // Wave 1から開始
+    this.scene.start('GameScene', { startWave: 1 });
   }
 
   /**
    * 「前線へ復帰（Quick Skip）」で開始
    * 
-   * @param startStage - 開始ステージ
+   * @param startStage - 開始ステージ（Wave数として扱う）
    */
   private startQuickSkip(startStage: number): void {
-    // 指定ステージから開始
-    this.scene.start('BattleScene', { startStage: startStage, isFullRun: false });
+    // 指定Waveから開始
+    this.scene.start('GameScene', { startWave: startStage });
   }
 }
 

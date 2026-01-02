@@ -14,10 +14,13 @@ import { TaskRewardSystem } from '../systems/TaskRewardSystem';
 import { AwakeningSystem, AwakeningType } from '../systems/AwakeningSystem';
 import { DebugSystem } from '../systems/DebugSystem';
 import { DebugPanel } from '../ui/DebugPanel';
+import { WaveSystem } from '../systems/WaveSystem';
 import { CodeBullet, CodeBulletConfig } from '../entities/CodeBullet';
 import { Task } from '../entities/Task';
 import { DamagePopup } from '../ui/DamagePopup';
 import { DecimalWrapper } from '../utils/Decimal';
+import { Rebirth } from '../systems/Rebirth';
+import { GameOverScene, GameOverInfo } from './GameOverScene';
 
 export class GameScene extends Phaser.Scene {
   private reia: Reia | null = null;
@@ -29,7 +32,10 @@ export class GameScene extends Phaser.Scene {
   private awakeningSystem: AwakeningSystem | null = null;
   private debugSystem: DebugSystem | null = null;
   private debugPanel: DebugPanel | null = null;
-  private stage: number = 1;
+  private waveSystem: WaveSystem | null = null;
+  private totalDamage: DecimalWrapper = new DecimalWrapper(0);
+  private isGameOver: boolean = false;
+  private startWave: number = 1; // 開始Wave数（Quick Skip用）
   
   // オート攻撃関連
   private autoAttackTimer: Phaser.Time.TimerEvent | null = null;
@@ -47,17 +53,23 @@ export class GameScene extends Phaser.Scene {
   private tensionBar: Phaser.GameObjects.Graphics | null = null;
   private tensionText: Phaser.GameObjects.Text | null = null;
   private awakeningText: Phaser.GameObjects.Text | null = null;
+  private waveText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
   }
 
-  create(): void {
+  create(data?: { startWave?: number }): void {
     // 背景色
     this.cameras.main.setBackgroundColor('#2a2a2a');
     
     const centerX = this.cameras.main.width / 2;
     const centerY = this.cameras.main.height / 2;
+    
+    // ゲーム状態をリセット
+    this.isGameOver = false;
+    this.totalDamage = new DecimalWrapper(0);
+    this.startWave = data?.startWave || 1;
     
     // システムを初期化
     this.initializeSystems();
@@ -122,6 +134,17 @@ export class GameScene extends Phaser.Scene {
     this.debugPanel = new DebugPanel(this, this.debugSystem);
     this.debugPanel.create();
     
+    // Waveシステム
+    this.waveSystem = new WaveSystem({
+      tasksPerWave: 10,
+      waveClearBonus: 1.2,
+    });
+    
+    // 開始Wave数を設定（Quick Skip用）
+    if (this.startWave > 1) {
+      this.waveSystem.setWave(this.startWave);
+    }
+    
     // オート攻撃タイマーを開始
     this.startAutoAttack();
   }
@@ -146,7 +169,7 @@ export class GameScene extends Phaser.Scene {
    * タスクマネージャーを初期化
    */
   private initializeTaskManager(): void {
-    if (!this.reia) {
+    if (!this.reia || !this.waveSystem) {
       return;
     }
     
@@ -157,7 +180,8 @@ export class GameScene extends Phaser.Scene {
       spawnInterval: spawnInterval,
       maxTasks: 10,         // 最大10個
       spawnRadius: 300,     // れいあから300ピクセル離れた位置
-      stage: this.stage,
+      stage: this.waveSystem.getCurrentWave(), // Wave数をstageとして使用
+      waveSystem: this.waveSystem, // WaveSystemを渡す
     };
     
     this.taskManager = new TaskManager(this, this.reia, config);
@@ -228,6 +252,15 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 10, y: 5 },
     }).setOrigin(0.5).setDepth(10);
     this.awakeningText.setAlpha(0.0);
+    
+    // Wave情報テキスト
+    this.waveText = this.add.text(centerX, 250, 'Wave: 1', {
+      fontSize: '18px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(10);
     
     this.updateUI();
   }
@@ -302,6 +335,13 @@ export class GameScene extends Phaser.Scene {
     if (this.taskCountText && this.taskManager) {
       const taskCount = this.taskManager.getTaskCount();
       this.taskCountText.setText(`タスク: ${taskCount}`);
+    }
+    
+    // Wave情報テキスト
+    if (this.waveText && this.waveSystem) {
+      const currentWave = this.waveSystem.getCurrentWave();
+      const remainingTasks = this.waveSystem.getRemainingTasksInWave();
+      this.waveText.setText(`Wave: ${currentWave} (残り: ${remainingTasks})`);
     }
     
     // セリフ
@@ -612,10 +652,12 @@ export class GameScene extends Phaser.Scene {
       }
       
       // れいあに触れたタスクをチェック（ゲームオーバー）
-      for (const task of tasks) {
-        if (task.isTouchingTarget()) {
-          // TODO: ゲームオーバー処理（Phase 4で実装）
-          console.log('Game Over: タスクがれいあに触れました');
+      if (!this.isGameOver) {
+        for (const task of tasks) {
+          if (task.isTouchingTarget()) {
+            this.handleGameOver();
+            break;
+          }
         }
       }
     }
@@ -657,6 +699,38 @@ export class GameScene extends Phaser.Scene {
     
     // UIを更新
     this.updateUI();
+  }
+
+  /**
+   * ゲームオーバー処理
+   */
+  private handleGameOver(): void {
+    if (this.isGameOver || !this.waveSystem) {
+      return;
+    }
+    
+    this.isGameOver = true;
+    
+    // 到達Wave数を取得（stageとして扱う）
+    const reachedWave = this.waveSystem.getCurrentWave();
+    
+    // 転生石を計算・獲得
+    const rebirthStones = Rebirth.gainRebirthStones(reachedWave);
+    
+    // ゲームオーバー情報を作成
+    const gameOverInfo: GameOverInfo = {
+      reachedStage: reachedWave,
+      rebirthStones: rebirthStones,
+      totalDamage: this.totalDamage,
+    };
+    
+    // GameOverSceneに情報を渡して遷移
+    const gameOverScene = this.scene.get('GameOverScene') as GameOverScene;
+    if (gameOverScene) {
+      gameOverScene.setGameOverInfo(gameOverInfo);
+    }
+    
+    this.scene.start('GameOverScene');
   }
 
   /**
@@ -723,6 +797,9 @@ export class GameScene extends Phaser.Scene {
           const damage = bullet.getDamage();
           const isDefeated = task.takeDamage(damage);
           
+          // 累計ダメージを記録
+          this.totalDamage = this.totalDamage.add(damage);
+          
           // ダメージポップアップを表示
           this.showDamagePopup(task.x, task.y, damage);
           
@@ -754,7 +831,7 @@ export class GameScene extends Phaser.Scene {
    * タスクを倒した時の処理
    */
   private onTaskDefeated(task: Task): void {
-    if (!this.taskManager || !this.stressSystem || !this.combo || !this.taskRewardSystem || !this.awakeningSystem) {
+    if (!this.taskManager || !this.stressSystem || !this.combo || !this.taskRewardSystem || !this.awakeningSystem || !this.waveSystem) {
       return;
     }
     
@@ -771,6 +848,9 @@ export class GameScene extends Phaser.Scene {
     const stressLevel = this.stressSystem.getStressLevel();
     const comboCount = this.combo.getComboCount();
     this.awakeningSystem.onTaskDefeated(stressLevel, comboCount);
+    
+    // Waveシステムを更新
+    this.waveSystem.onTaskDefeated();
     
     // 覚醒モードをチェック
     this.checkAwakenings(task);
