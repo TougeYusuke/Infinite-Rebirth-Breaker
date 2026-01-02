@@ -391,13 +391,29 @@ export class GameScene extends Phaser.Scene {
    * 弾丸を発射
    */
   private fireBullet(fromX: number, fromY: number, toX: number, toY: number, damage: DecimalWrapper): void {
+    // 方向ベクトルを計算
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // 距離が0の場合は発射しない
+    if (distance === 0) {
+      return;
+    }
+    
+    // 正規化された方向ベクトル
+    const directionX = dx / distance;
+    const directionY = dy / distance;
+    
     const config: CodeBulletConfig = {
       x: fromX,
       y: fromY,
-      targetX: toX,
-      targetY: toY,
+      directionX: directionX,
+      directionY: directionY,
       speed: 500, // 500ピクセル/秒
       damage: damage,
+      cameraWidth: this.cameras.main.width,
+      cameraHeight: this.cameras.main.height,
     };
     
     const bullet = new CodeBullet(this, config);

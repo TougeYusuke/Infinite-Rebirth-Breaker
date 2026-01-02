@@ -13,10 +13,12 @@ import { DecimalWrapper } from '../utils/Decimal';
 export interface CodeBulletConfig {
   x: number;              // 発射位置X
   y: number;              // 発射位置Y
-  targetX: number;        // 目標位置X
-  targetY: number;        // 目標位置Y
+  directionX: number;     // 方向ベクトルX（正規化済み）
+  directionY: number;     // 方向ベクトルY（正規化済み）
   speed: number;          // 速度（ピクセル/秒）
   damage: DecimalWrapper; // ダメージ
+  cameraWidth?: number;   // カメラの幅（画面外判定用、オプション）
+  cameraHeight?: number;  // カメラの高さ（画面外判定用、オプション）
 }
 
 /**
@@ -30,8 +32,10 @@ const CODE_ICONS = ['</>', '{}', '[]', '()', '=>', '++', '--'];
 export class CodeBullet extends Phaser.GameObjects.Container {
   private damage: DecimalWrapper;
   private speed: number;
-  private targetX: number;
-  private targetY: number;
+  private directionX: number;
+  private directionY: number;
+  private cameraWidth: number;
+  private cameraHeight: number;
   private iconText: Phaser.GameObjects.Text | null = null;
   private hasHit: boolean = false;
 
@@ -40,8 +44,10 @@ export class CodeBullet extends Phaser.GameObjects.Container {
     
     this.damage = config.damage;
     this.speed = config.speed;
-    this.targetX = config.targetX;
-    this.targetY = config.targetY;
+    this.directionX = config.directionX;
+    this.directionY = config.directionY;
+    this.cameraWidth = config.cameraWidth || scene.cameras.main.width;
+    this.cameraHeight = config.cameraHeight || scene.cameras.main.height;
     
     // シーンに追加
     scene.add.existing(this);
@@ -49,7 +55,7 @@ export class CodeBullet extends Phaser.GameObjects.Container {
     // アイコンの作成
     this.createIcon();
     
-    // 発射方向を計算
+    // 発射方向を計算（角度を設定）
     this.calculateDirection();
   }
 
@@ -79,18 +85,12 @@ export class CodeBullet extends Phaser.GameObjects.Container {
   }
 
   /**
-   * 発射方向を計算
+   * 発射方向を計算（角度を設定）
    */
   private calculateDirection(): void {
-    const dx = this.targetX - this.x;
-    const dy = this.targetY - this.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance > 0) {
-      // 角度を計算（ラジアン）
-      const angle = Math.atan2(dy, dx);
-      this.rotation = angle;
-    }
+    // 方向ベクトルから角度を計算（ラジアン）
+    const angle = Math.atan2(this.directionY, this.directionX);
+    this.rotation = angle;
   }
 
   /**
@@ -102,23 +102,24 @@ export class CodeBullet extends Phaser.GameObjects.Container {
       return true; // 削除フラグ
     }
     
-    // 目標位置に向かって移動
-    const dx = this.targetX - this.x;
-    const dy = this.targetY - this.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance < 10) {
-      // 目標位置に到達したら削除
-      return true;
-    }
-    
-    // 移動
+    // 方向ベクトルに沿って移動
     const moveDistance = (this.speed * delta) / 1000; // ピクセル/秒をピクセル/フレームに変換
-    const moveX = (dx / distance) * moveDistance;
-    const moveY = (dy / distance) * moveDistance;
+    const moveX = this.directionX * moveDistance;
+    const moveY = this.directionY * moveDistance;
     
     this.x += moveX;
     this.y += moveY;
+    
+    // 画面外に出たら削除
+    const margin = 50; // マージン（画面外に出てから削除）
+    if (
+      this.x < -margin ||
+      this.x > this.cameraWidth + margin ||
+      this.y < -margin ||
+      this.y > this.cameraHeight + margin
+    ) {
+      return true; // 削除フラグ
+    }
     
     return false; // まだ有効
   }
