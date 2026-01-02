@@ -70,12 +70,12 @@ export class Reia extends Phaser.GameObjects.Container {
    */
   private createSprite(): void {
     // スプライトシートから画像を作成
-    // フレームサイズ 192x192 を想定
+    // フレームサイズ 341x341 を想定
     this.sprite = this.scene.add.sprite(0, 0, 'reia', 1); // デフォルトは上段中央（微笑み）
     
-    // サイズ調整（画面に合わせて少し縮小などが必要ならここで行う）
-    // 元が192pxなので、少し大きいかもしれない
-    this.sprite.setScale(0.8);
+    // サイズ調整
+    // 元が341pxだと大きすぎるので、画面に合わせて縮小 (約100px程度に)
+    this.sprite.setScale(0.3);
     
     this.add(this.sprite);
     
@@ -170,6 +170,109 @@ export class Reia extends Phaser.GameObjects.Container {
         this.sprite.setFrame(4); // 中段中央（レンチ/やる気）
     } else {
         this.sprite.setFrame(1); // 上段中央（通常）
+    }
+  }
+
+  /**
+   * ストレスレベルを設定
+   */
+  setStressLevel(stress: number): void {
+    this.stressLevel = Math.max(0, Math.min(100, stress));
+    this.updateEmotionState();
+    this.updateExpression();
+  }
+
+  /**
+   * ストレスレベルを取得
+   */
+  getStressLevel(): number {
+    return this.stressLevel;
+  }
+
+  /**
+   * コンボ数を設定
+   */
+  setComboCount(combo: number): void {
+    this.comboCount = combo;
+    this.updateEmotionState();
+    this.updateExpression();
+  }
+
+  /**
+   * HPを設定
+   */
+  setHP(hp: number, maxHp: number): void {
+    this.hp = hp;
+    this.maxHp = maxHp;
+    this.updateExpression();
+  }
+
+  /**
+   * 感情状態を更新
+   */
+  private updateEmotionState(): void {
+    // コンボ中でストレスが低い場合は「集中」
+    if (this.comboCount >= 5 && this.stressLevel < 30) {
+      this.emotionState = EmotionState.FOCUSED;
+      return;
+    }
+
+    // ストレスレベルに応じて感情状態を決定
+    if (this.stressLevel <= 30) {
+      this.emotionState = EmotionState.NORMAL;
+    } else if (this.stressLevel <= 70) {
+      this.emotionState = EmotionState.ANXIOUS;
+    } else {
+      this.emotionState = EmotionState.PANIC;
+    }
+  }
+
+  /**
+   * 感情状態を取得
+   */
+  getEmotionState(): EmotionState {
+    return this.emotionState;
+  }
+
+  /**
+   * 表情タイプを取得
+   */
+  getExpressionType(): ExpressionType {
+    return this.expressionType;
+  }
+
+  /**
+   * 感情状態に応じたステータス倍率を取得
+   */
+  getStatusMultiplier(): { attack: number; speed: number } {
+    switch (this.emotionState) {
+      case EmotionState.NORMAL:
+        return { attack: 1.0, speed: 1.0 };
+      case EmotionState.ANXIOUS:
+        return { attack: 0.8, speed: 1.2 }; // 焦って早く打つが、ミスが増える
+      case EmotionState.PANIC:
+        return { attack: 0.5, speed: 0.8 }; // 混乱して効率が悪い
+      case EmotionState.FOCUSED:
+        return { attack: 1.2, speed: 1.1 }; // ゾーンに入る
+      default:
+        return { attack: 1.0, speed: 1.0 };
+    }
+  }
+
+  /**
+   * セリフを取得（感情状態に応じた）
+   */
+  getDialogue(): string {
+    if (this.stressLevel >= 80) {
+      return '無理...';
+    } else if (this.stressLevel >= 50) {
+      return 'やばい...';
+    } else if (this.comboCount >= 20) {
+      return '調子いい！';
+    } else if (this.comboCount >= 10) {
+      return 'いける！';
+    } else {
+      return '';
     }
   }
 
