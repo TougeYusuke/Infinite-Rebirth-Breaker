@@ -113,10 +113,12 @@ export class TaskManager {
 
   /**
    * タスクを生成
+   * @param force - trueの場合、生成間隔チェックをスキップ（タスク数が0の場合に使用）
    */
-  private spawnTask(): void {
+  private spawnTask(force: boolean = false): void {
     const now = Date.now();
-    if (now - this.lastSpawnTime < this.config.spawnInterval) {
+    // 強制生成でない場合、生成間隔をチェック
+    if (!force && now - this.lastSpawnTime < this.config.spawnInterval) {
       return; // 生成間隔が短すぎる
     }
     this.lastSpawnTime = now;
@@ -174,6 +176,11 @@ export class TaskManager {
    * タスクを更新
    */
   update(delta: number): void {
+    // タスク数が0になった場合は即座に生成（画面内に常に敵がいるようにする）
+    if (this.tasks.length === 0) {
+      this.spawnTask(true); // 強制生成（間隔チェックをスキップ）
+    }
+    
     // れいあの位置を更新
     const reiaX = this.reia.x;
     const reiaY = this.reia.y;
@@ -202,6 +209,11 @@ export class TaskManager {
     if (index !== -1) {
       this.tasks.splice(index, 1);
       task.destroy();
+      
+      // タスク数が0になった場合は即座に生成（画面内に常に敵がいるようにする）
+      if (this.tasks.length === 0) {
+        this.spawnTask(true); // 強制生成（間隔チェックをスキップ）
+      }
     }
   }
 
