@@ -135,18 +135,14 @@ export class TaskManager {
     const taskType = this.selectRandomTaskType();
     
     // WaveSystemの難易度倍率を考慮したstageを計算
-    let effectiveStage = this.config.stage;
-    if (this.waveSystem) {
-      // Wave数に応じた難易度倍率をstageに反映
-      const difficultyMultiplier = this.waveSystem.getTaskHPMultiplier();
-      // 倍率をstageに変換（1.2倍 = stage + 1相当）
-      effectiveStage = Math.floor(this.config.stage * difficultyMultiplier);
-    }
+    // stageはWave数として使用し、Task.ts内でwaveMultiplierとして計算される
+    // これにより、Wave進行に応じてHPが指数関数的に増加する
+    const effectiveStage = this.config.stage; // Wave数として使用
     
     // タスクを作成
     const task = new Task(this.scene, {
       type: taskType,
-      stage: effectiveStage,
+      stage: effectiveStage, // Wave数（Task.ts内でwaveMultiplier = 1.2^(stage-1)として計算される）
       x: spawnX,
       y: spawnY,
       targetX: reiaX,

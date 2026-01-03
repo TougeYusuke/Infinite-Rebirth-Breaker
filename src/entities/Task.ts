@@ -95,10 +95,22 @@ export class Task extends Phaser.GameObjects.Container {
     this.targetY = taskConfig.targetY;
     this.speed = this.config.speed;
     
-    // HP計算（ステージ数に応じて指数関数的に増加）
-    const baseHP = 100;
-    const stageMultiplier = Math.pow(1.5, taskConfig.stage - 1);
-    const hpValue = baseHP * stageMultiplier * this.config.hpMultiplier;
+    // HP計算（ゲームバランス調整）
+    // 初期状態（Wave 1）で最も弱い敵（BUG）を2~3発で倒せるようにする
+    // baseDamage=10、attackLevel=1の場合、1発=10ダメージ
+    // 2~3発で倒すには、HPを20~30にする必要がある
+    // BUGのHP倍率=0.8なので、baseHP=30とすると、BUGのHP=30*0.8=24（2~3発で倒せる）
+    const baseHP = 30; // 100 → 30に調整（序盤を2~3発で倒せるように）
+    
+    // Wave進行に応じた難易度倍率（WaveSystemから渡される、またはstageから計算）
+    // stage=1の場合、waveMultiplier=1.0
+    // stage=2の場合、waveMultiplier=1.2
+    // stage=3の場合、waveMultiplier=1.44
+    // など、指数関数的に増加
+    const waveMultiplier = Math.pow(1.2, taskConfig.stage - 1);
+    
+    // HP = baseHP * waveMultiplier * taskTypeMultiplier
+    const hpValue = baseHP * waveMultiplier * this.config.hpMultiplier;
     this.maxHp = new DecimalWrapper(hpValue);
     this.hp = new DecimalWrapper(hpValue);
     
