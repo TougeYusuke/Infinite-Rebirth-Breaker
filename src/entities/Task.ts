@@ -82,7 +82,7 @@ export class Task extends Phaser.GameObjects.Container {
   private targetX: number;
   private targetY: number;
   private speed: number;
-  private sprite: Phaser.GameObjects.Graphics | null = null;
+  private sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Graphics | null = null;
   private iconText: Phaser.GameObjects.Text | null = null;
   private hpBar: Phaser.GameObjects.Graphics | null = null;
 
@@ -128,19 +128,50 @@ export class Task extends Phaser.GameObjects.Container {
    * スプライトの作成
    */
   private createSprite(): void {
-    // プロトタイプ: シンプルな円形で表現
-    this.sprite = this.scene.add.graphics();
-    this.sprite.fillStyle(this.config.color, 1.0);
-    this.sprite.fillCircle(0, 0, 30); // 半径30の円
-    this.sprite.setDepth(5);
-    this.add(this.sprite);
+    // タスクタイプに応じた画像を読み込む
+    const imageKey = this.getImageKey();
     
-    // アイコンテキスト
-    this.iconText = this.scene.add.text(0, 0, this.config.icon, {
-      fontSize: '24px',
-      color: '#ffffff',
-    }).setOrigin(0.5).setDepth(6);
-    this.add(this.iconText);
+    // 画像が読み込まれているか確認
+    if (this.scene.textures.exists(imageKey)) {
+      // 画像が存在する場合は画像スプライトを使用
+      this.sprite = this.scene.add.sprite(0, 0, imageKey);
+      this.sprite.setScale(0.5); // 画像サイズに応じて調整（120px画像の場合、60px表示）
+      this.sprite.setOrigin(0.5, 0.5);
+      this.sprite.setDepth(5);
+      this.add(this.sprite);
+    } else {
+      // 画像が存在しない場合はフォールバック（Graphics描画）
+      this.sprite = this.scene.add.graphics();
+      this.sprite.fillStyle(this.config.color, 1.0);
+      this.sprite.fillCircle(0, 0, 30); // 半径30の円
+      this.sprite.setDepth(5);
+      this.add(this.sprite);
+      
+      // アイコンテキスト
+      this.iconText = this.scene.add.text(0, 0, this.config.icon, {
+        fontSize: '24px',
+        color: '#ffffff',
+      }).setOrigin(0.5).setDepth(6);
+      this.add(this.iconText);
+    }
+  }
+
+  /**
+   * タスクタイプに応じた画像キーを取得
+   */
+  private getImageKey(): string {
+    switch (this.taskType) {
+      case TaskType.BUG:
+        return 'task_bug';
+      case TaskType.FEATURE:
+        return 'task_feature';
+      case TaskType.REVIEW:
+        return 'task_review';
+      case TaskType.URGENT:
+        return 'task_urgent';
+      default:
+        return 'task_bug'; // デフォルト
+    }
   }
 
   /**

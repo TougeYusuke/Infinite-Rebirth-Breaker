@@ -24,6 +24,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image('reia_anxious', 'assets/images/characters/reia_anxious.png');
     this.load.image('reia_panic', 'assets/images/characters/reia_panic.png');
     this.load.image('reia_damage', 'assets/images/characters/reia_damage.png');
+
+    // タスク（敵）画像
+    this.load.image('task_bug', 'assets/images/tasks/task_bug.png');
+    this.load.image('task_feature', 'assets/images/tasks/task_feature.png');
+    this.load.image('task_review', 'assets/images/tasks/task_review.png');
+    this.load.image('task_urgent', 'assets/images/tasks/task_urgent.png');
   }
 
   create(): void {
