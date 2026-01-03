@@ -88,38 +88,38 @@ export class Task extends Phaser.GameObjects.Container {
 
   constructor(scene: Phaser.Scene, taskConfig: TaskConfig) {
     super(scene, taskConfig.x, taskConfig.y);
-    
+
     this.taskType = taskConfig.type;
     this.config = TASK_TYPE_CONFIGS[this.taskType];
     this.targetX = taskConfig.targetX;
     this.targetY = taskConfig.targetY;
     this.speed = this.config.speed;
-    
+
     // HP計算（ゲームバランス調整）
     // 初期状態（Wave 1）で最も弱い敵（BUG）を2~3発で倒せるようにする
     // baseDamage=10、attackLevel=1の場合、1発=10ダメージ
     // 2~3発で倒すには、HPを20~30にする必要がある
     // BUGのHP倍率=0.8なので、baseHP=30とすると、BUGのHP=30*0.8=24（2~3発で倒せる）
     const baseHP = 30; // 100 → 30に調整（序盤を2~3発で倒せるように）
-    
+
     // Wave進行に応じた難易度倍率（WaveSystemから渡される、またはstageから計算）
     // stage=1の場合、waveMultiplier=1.0
     // stage=2の場合、waveMultiplier=1.2
     // stage=3の場合、waveMultiplier=1.44
     // など、指数関数的に増加
     const waveMultiplier = Math.pow(1.2, taskConfig.stage - 1);
-    
+
     // HP = baseHP * waveMultiplier * taskTypeMultiplier
     const hpValue = baseHP * waveMultiplier * this.config.hpMultiplier;
     this.maxHp = new DecimalWrapper(hpValue);
     this.hp = new DecimalWrapper(hpValue);
-    
+
     // シーンに追加
     scene.add.existing(this);
-    
+
     // スプライトの作成
     this.createSprite();
-    
+
     // HPバーの作成
     this.createHPBar();
   }
@@ -130,7 +130,7 @@ export class Task extends Phaser.GameObjects.Container {
   private createSprite(): void {
     // タスクタイプに応じた画像を読み込む
     const imageKey = this.getImageKey();
-    
+
     // 画像が読み込まれているか確認
     if (this.scene.textures.exists(imageKey)) {
       // 画像が存在する場合は画像スプライトを使用
@@ -146,7 +146,7 @@ export class Task extends Phaser.GameObjects.Container {
       this.sprite.fillCircle(0, 0, 30); // 半径30の円
       this.sprite.setDepth(5);
       this.add(this.sprite);
-      
+
       // アイコンテキスト
       this.iconText = this.scene.add.text(0, 0, this.config.icon, {
         fontSize: '24px',
@@ -190,17 +190,17 @@ export class Task extends Phaser.GameObjects.Container {
     if (!this.hpBar) {
       return;
     }
-    
+
     const hpRatio = this.hp.toNumber() / this.maxHp.toNumber();
     const barWidth = 50;
     const barHeight = 4;
-    
+
     this.hpBar.clear();
-    
+
     // 背景
     this.hpBar.fillStyle(0x333333, 1.0);
     this.hpBar.fillRect(-barWidth / 2, -40, barWidth, barHeight);
-    
+
     // HPバー
     const barColor = hpRatio > 0.5 ? 0x00ff00 : hpRatio > 0.2 ? 0xffaa00 : 0xff0000;
     this.hpBar.fillStyle(barColor, 1.0);
@@ -215,16 +215,16 @@ export class Task extends Phaser.GameObjects.Container {
     const dx = this.targetX - this.x;
     const dy = this.targetY - this.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
+
     if (distance > 0) {
       const moveDistance = (this.speed * delta) / 1000; // ピクセル/秒をピクセル/フレームに変換
       const moveX = (dx / distance) * moveDistance;
       const moveY = (dy / distance) * moveDistance;
-      
+
       this.x += moveX;
       this.y += moveY;
     }
-    
+
     // HPバーを更新
     this.updateHPBar();
   }
@@ -234,12 +234,12 @@ export class Task extends Phaser.GameObjects.Container {
    */
   takeDamage(damage: DecimalWrapper): boolean {
     this.hp = this.hp.sub(damage);
-    
+
     if (this.hp.lessThanOrEqualTo(0)) {
       this.hp = DecimalWrapper.zero();
       return true; // 倒された
     }
-    
+
     return false; // まだ生きている
   }
 

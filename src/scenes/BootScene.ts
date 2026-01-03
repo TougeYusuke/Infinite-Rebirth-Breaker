@@ -18,18 +18,22 @@ export class BootScene extends Phaser.Scene {
     // --- アセットのロード ---
 
     // れいあキャラクター（個別画像）
-    this.load.image('reia_normal', 'assets/images/characters/reia_normal.png');
-    this.load.image('reia_focus', 'assets/images/characters/reia_focus.png');
-    this.load.image('reia_attack', 'assets/images/characters/reia_attack.png');
-    this.load.image('reia_anxious', 'assets/images/characters/reia_anxious.png');
-    this.load.image('reia_panic', 'assets/images/characters/reia_panic.png');
-    this.load.image('reia_damage', 'assets/images/characters/reia_damage.png');
+    // GitHub Pagesのサブパスに対応するため、絶対パスを使用
+    const baseUrl = import.meta.env.BASE_URL; // '/Infinite-Rebirth-Breaker/'
+    this.load.image('reia_normal', `${baseUrl}assets/images/characters/reia_normal.png`);
+    this.load.image('reia_focus', `${baseUrl}assets/images/characters/reia_focus.png`);
+    this.load.image('reia_attack', `${baseUrl}assets/images/characters/reia_attack.png`);
+    this.load.image('reia_anxious', `${baseUrl}assets/images/characters/reia_anxious.png`);
+    this.load.image('reia_panic', `${baseUrl}assets/images/characters/reia_panic.png`);
+    this.load.image('reia_damage', `${baseUrl}assets/images/characters/reia_damage.png`);
 
     // タスク（敵）画像
-    this.load.image('task_bug', 'assets/images/tasks/task_bug.png');
-    this.load.image('task_feature', 'assets/images/tasks/task_feature.png');
-    this.load.image('task_review', 'assets/images/tasks/task_review.png');
-    this.load.image('task_urgent', 'assets/images/tasks/task_urgent.png');
+    // GitHub Pagesのサブパスに対応するため、絶対パスを使用
+    const baseUrl = import.meta.env.BASE_URL; // '/Infinite-Rebirth-Breaker/'
+    this.load.image('task_bug', `${baseUrl}assets/images/tasks/task_bug.png`);
+    this.load.image('task_feature', `${baseUrl}assets/images/tasks/task_feature.png`);
+    this.load.image('task_review', `${baseUrl}assets/images/tasks/task_review.png`);
+    this.load.image('task_urgent', `${baseUrl}assets/images/tasks/task_urgent.png`);
   }
 
   create(): void {
