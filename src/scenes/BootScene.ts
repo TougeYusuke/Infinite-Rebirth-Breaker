@@ -17,13 +17,13 @@ export class BootScene extends Phaser.Scene {
 
     // --- アセットのロード ---
 
-    // れいあキャラクター（スプライトシート）
-    // 想定: 3x3グリッド
-    // Bing Image Creator (1024x1024) の場合、1コマは約341px
-    this.load.spritesheet('reia', 'assets/images/characters/reia_sheet.png', {
-      frameWidth: 341, // 1024 / 3 ≒ 341
-      frameHeight: 341,
-    });
+    // れいあキャラクター（個別画像）
+    this.load.image('reia_normal', 'assets/images/characters/reia_normal.png');
+    this.load.image('reia_focus', 'assets/images/characters/reia_focus.png');
+    this.load.image('reia_attack', 'assets/images/characters/reia_attack.png');
+    this.load.image('reia_anxious', 'assets/images/characters/reia_anxious.png');
+    this.load.image('reia_panic', 'assets/images/characters/reia_panic.png');
+    this.load.image('reia_damage', 'assets/images/characters/reia_damage.png');
   }
 
   create(): void {

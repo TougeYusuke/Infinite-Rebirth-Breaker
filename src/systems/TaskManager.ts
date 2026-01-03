@@ -104,6 +104,14 @@ export class TaskManager {
   }
 
   /**
+   * 最大タスク数を更新（Wave進行に応じて）
+   */
+  updateMaxTasks(newMaxTasks: number): void {
+    this.config.maxTasks = newMaxTasks;
+    // 現在のタスク数が新しい最大数を超えている場合は削除しない（自然に減るまで待つ）
+  }
+
+  /**
    * タスクを生成
    */
   private spawnTask(): void {

@@ -140,9 +140,9 @@ export class GameScene extends Phaser.Scene {
     this.debugPanel = new DebugPanel(this, this.debugSystem);
     this.debugPanel.create();
     
-    // Waveシステム
+    // Waveシステム（爽快感を出すため、タスク数を増やす）
     this.waveSystem = new WaveSystem({
-      tasksPerWave: 10,
+      tasksPerWave: 20,  // 10 → 20に増加
       waveClearBonus: 1.2,
     });
     
@@ -221,11 +221,16 @@ export class GameScene extends Phaser.Scene {
     }
     
     // デバッグ設定があればそれを使用、なければデフォルト値
-    const spawnInterval = this.debugSystem?.getTaskSpawnInterval() || 3000;
+    const spawnInterval = this.debugSystem?.getTaskSpawnInterval() || 1500; // 3000 → 1500ms（1.5秒）に短縮
+    
+    // Wave進行に応じて最大タスク数を増やす（爽快感を出すため）
+    const baseMaxTasks = 20; // 10 → 20に増加
+    const waveBonus = Math.min(1.0 + (this.waveSystem.getCurrentWave() - 1) * 0.1, 2.0); // Waveごとに10%増加、最大2倍まで
+    const maxTasks = Math.floor(baseMaxTasks * waveBonus);
     
     const config: TaskManagerConfig = {
       spawnInterval: spawnInterval,
-      maxTasks: 10,         // 最大10個
+      maxTasks: maxTasks,    // Wave進行に応じて増加（初期20個、最大40個）
       spawnRadius: 300,     // れいあから300ピクセル離れた位置
       stage: this.waveSystem.getCurrentWave(), // Wave数をstageとして使用
       waveSystem: this.waveSystem, // WaveSystemを渡す
@@ -955,7 +960,16 @@ export class GameScene extends Phaser.Scene {
     this.awakeningSystem.onTaskDefeated(stressLevel, comboCount);
     
     // Waveシステムを更新
-    this.waveSystem.onTaskDefeated();
+    // Wave進行をチェック
+    const waveAdvanced = this.waveSystem.onTaskDefeated();
+    
+    // Waveが進んだ場合、最大タスク数を更新（爽快感を出すため）
+    if (waveAdvanced && this.taskManager && this.waveSystem) {
+      const baseMaxTasks = 20;
+      const waveBonus = Math.min(1.0 + (this.waveSystem.getCurrentWave() - 1) * 0.1, 2.0);
+      const newMaxTasks = Math.floor(baseMaxTasks * waveBonus);
+      this.taskManager.updateMaxTasks(newMaxTasks);
+    }
     
     // 覚醒モードをチェック
     this.checkAwakenings(task);

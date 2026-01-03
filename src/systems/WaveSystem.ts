@@ -28,14 +28,17 @@ export class WaveSystem {
 
   /**
    * タスクを倒した時の処理
+   * @returns Waveが進んだ場合true
    */
-  onTaskDefeated(): void {
+  onTaskDefeated(): boolean {
     this.tasksDefeatedInWave++;
     
     // Waveクリア判定
     if (this.tasksDefeatedInWave >= this.tasksPerWave) {
       this.nextWave();
+      return true; // Waveが進んだ
     }
+    return false; // Waveは進まなかった
   }
 
   /**
