@@ -17,9 +17,11 @@ export class BootScene extends Phaser.Scene {
 
     // --- アセットのロード ---
 
-    // れいあキャラクター（個別画像）
     // GitHub Pagesのサブパスに対応するため、絶対パスを使用
-    const baseUrl = import.meta.env.BASE_URL; // '/Infinite-Rebirth-Breaker/'
+    // @ts-ignore - Viteの環境変数（型定義はvite/clientで提供される）
+    const baseUrl = import.meta.env.BASE_URL || '/Infinite-Rebirth-Breaker/'; // '/Infinite-Rebirth-Breaker/'
+
+    // れいあキャラクター（個別画像）
     this.load.image('reia_normal', `${baseUrl}assets/images/characters/reia_normal.png`);
     this.load.image('reia_focus', `${baseUrl}assets/images/characters/reia_focus.png`);
     this.load.image('reia_attack', `${baseUrl}assets/images/characters/reia_attack.png`);
@@ -28,8 +30,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('reia_damage', `${baseUrl}assets/images/characters/reia_damage.png`);
 
     // タスク（敵）画像
-    // GitHub Pagesのサブパスに対応するため、絶対パスを使用
-    const baseUrl = import.meta.env.BASE_URL; // '/Infinite-Rebirth-Breaker/'
     this.load.image('task_bug', `${baseUrl}assets/images/tasks/task_bug.png`);
     this.load.image('task_feature', `${baseUrl}assets/images/tasks/task_feature.png`);
     this.load.image('task_review', `${baseUrl}assets/images/tasks/task_review.png`);
