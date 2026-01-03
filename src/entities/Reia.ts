@@ -339,11 +339,13 @@ export class Reia extends Phaser.GameObjects.Container {
 
   /**
    * 覚醒モードのアニメーション
+   * 注意: スケールアニメーションは削除（仕様にないため）
+   * 視覚効果はAwakeningEffectで管理
    */
   playAwakeningAnimation(type: 'focus' | 'burst' | 'creative'): void {
     if (!this.sprite) return;
 
-    // タイプに応じたポーズ
+    // タイプに応じたポーズ（画像のみ変更、スケールは変更しない）
     switch (type) {
       case 'focus':
         this.changeTexture('reia_focus');
@@ -356,16 +358,9 @@ export class Reia extends Phaser.GameObjects.Container {
         break;
     }
 
-    // 演出エフェクト
+    // スケールを確実に元の値（0.25）に戻す
     if (this.sprite) {
-      this.scene.tweens.add({
-        targets: this.sprite,
-        scaleX: 1.2,
-        scaleY: 1.2,
-        duration: 200,
-        yoyo: true,
-        ease: 'Power2',
-      });
+      this.sprite.setScale(0.25);
     }
   }
 
